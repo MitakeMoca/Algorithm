@@ -1,5 +1,6 @@
 /*
     使用二分法求出 sqrt(n) 的整数部分
+    时间复杂度 O(logn)
 */
 
 #include <bits/stdc++.h>
