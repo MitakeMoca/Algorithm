@@ -10,7 +10,7 @@ bool check(int i) {
 }
 
 int find(int l, int r) {
-    int ret = r;
+    int ret = -1;
     while(l <= r) {
         int mid = l + r >> 1;
         if(check(mid))
