@@ -1,3 +1,8 @@
+/*
+    求 a ^ b % p
+    时间复杂度：O(logb)
+*/
+
 #include <bits/stdc++.h>
 using namespace std;
 typedef long long ll;
