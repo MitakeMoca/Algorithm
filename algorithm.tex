@@ -1,0 +1,1491 @@
+\documentclass[UTF8]{article}
+\usepackage[UTF8]{ctex}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{needspace} % 新增：用于控制分页的宏包
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage[a4paper, margin=1in]{geometry}
+
+
+
+% ===== 代码块样式设置 =====
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    frame=tb,
+    breaklines=true,
+    tabsize=4
+}
+
+\title{ACM 算法模板}
+\author{Otter.put}
+\date{2025.05.26}
+
+\begin{document}
+\maketitle
+
+% ===== 自动生成目录 =====
+\tableofcontents
+
+% ===== 强制分页示例 =====
+\section{基础算法}
+\subsection{高精度}
+
+\subsubsection{高精度加法}
+C = A + B，满足  A $\ge$ 0, B $\ge$ 0；A、B、C 均为逆序 vector（即高位在前，低位在后）
+\begin{lstlisting}[caption=高精度加法]
+vector<int> add(vector<int> &A, vector<int> &B) {
+    if (A.size() < B.size()) return add(B, A);
+
+    vector<int> C;
+    int t = 0;
+    for (int i = 0; i < A.size(); i ++ )
+    {
+        t += A[i];
+        if (i < B.size()) t += B[i];
+        C.push_back(t % 10);
+        t /= 10;
+    }
+
+    if (t) C.push_back(t);
+    return C;
+}
+\end{lstlisting}
+
+\subsubsection{高精度减法}
+C = A - B，满足  A $\ge$ B,  A $\ge$ 0, B $\ge$ 0；A、B、C 均为逆序 vector（即高位在前，低位在后）
+\begin{lstlisting}[caption=高精度减法]
+vector<int> sub(vector<int> &A, vector<int> &B) {
+    vector<int> C;
+    for (int i = 0, t = 0; i < A.size(); i ++ ) {
+        t = A[i] - t;
+        if (i < B.size()) t -= B[i];
+        C.push_back((t + 10) % 10);
+        if (t < 0) t = 1;
+        else t = 0;
+    }
+
+    while (C.size() > 1 && C.back() == 0) C.pop_back();
+    return C;
+}
+\end{lstlisting}
+
+\subsubsection{高精度乘低精度}
+C = A * B，满足 A $\ge$ 0, B $\textgreater$ 0；A、C 均为逆序 vector（即高位在前，低位在后）
+\begin{lstlisting}[caption=高精度乘低精度]
+vector<int> mul(vector<int> &A, int b) {
+    vector<int> C;
+    int t = 0;
+    for (int i = 0; i < A.size() || t; i ++ ) {
+        if (i < A.size()) t += A[i] * b;
+        C.push_back(t % 10);
+        t /= 10;
+    }
+
+    return C;
+}
+\end{lstlisting}
+
+\subsubsection{高精度乘高精度}
+C = A * B，满足 A $\ge$ 0, B $\textgreater$ 0；A、B、C 均为逆序 vector（即高位在前，低位在后）
+\begin{lstlisting}[caption=高精度乘高精度][escapeinside=``]
+bool is_zero(vector<int>& A) {
+    return A.size() == 1 && A[0] == 0;
+}
+
+vector<int> mul(vector<int>& A, vector<int>& B) {
+    if(is_zero(A) || is_zero(B))
+        return {0};
+    
+    int m = A.size(), n = B.size();
+    vector<int> C(m + n, 0); 
+    
+    for (int i = 0; i < m; i++) 
+        for (int j = 0; j < n; j++) 
+            C[i + j] += A[i] * B[j];	// 累加到对应位置
+    
+    // 统一处理进位
+    int carry = 0;
+    for (int i = 0; i < m + n; i++) {
+        int total = C[i] + carry;
+        C[i] = total % 10;  
+        carry = total / 10;   
+    }
+    
+    if (carry) 
+        C.push_back(carry);
+    
+    while (C.size() > 1 && C.back() == 0) 
+        C.pop_back();
+    return C;
+}
+\end{lstlisting}
+
+\subsubsection{高精度除低精度}
+A / b = C ... r，A $\ge$ 0, b $\textgreater$ 0；A、C 均为逆序 vector（即高位在前，低位在后）
+\begin{lstlisting}[caption=高精度除低精度]
+vector<int> div(vector<int> &A, int b, int &r) {
+    vector<int> C;
+    r = 0;
+    for (int i = A.size() - 1; i >= 0; i -- ) {
+        r = r * 10 + A[i];
+        C.push_back(r / b);
+        r %= b;
+    }
+    reverse(C.begin(), C.end());
+    while (C.size() > 1 && C.back() == 0) C.pop_back();
+    return C;
+}
+\end{lstlisting}
+
+\subsubsection{封装为类 + 压位高精度}
+注意，我们封装的高精度类为了实现的便捷没有符号的概念。同时，使用压位高精度的思想来提升运算速度。
+\begin{lstlisting}[caption=压位高精度类]
+const int BASE = 10000; 
+const int BASE_DIGITS = 4; 
+
+struct Big {
+    vector<int> digits;
+
+    // 当前数 > other，返回 1；小于返回 -1；等于返回 0
+    int cmp(const Big& other) const {
+        if (digits.size() != other.digits.size())
+            return digits.size() > other.digits.size() ? 1 : -1;
+        
+        for (int i = digits.size() - 1; i >= 0; i--) 
+            if (digits[i] != other.digits[i]) 
+                return digits[i] > other.digits[i] ? 1 : -1;
+        
+        return 0;
+    }
+
+    Big() : digits({0}) {}
+
+    Big(long long num) {
+        if (num == 0) {
+            digits = {0};
+            return;
+        }
+        
+        while (num > 0) {
+            digits.push_back(num % BASE);
+            num /= BASE;
+        }
+    }
+
+    Big(const string& str) {
+        for (int i = str.size() - 1; i >= 0; i -= BASE_DIGITS) {
+            int digit = 0;
+            int end = max(0, i - BASE_DIGITS + 1);
+            for (int j = end; j <= i; j++) {
+                digit = digit * 10 + (str[j] - '0');
+            }
+            digits.push_back(digit);
+        }
+        
+        while (digits.size() > 1 && digits.back() == 0)
+            digits.pop_back();
+    }
+
+    Big(const Big& other) : digits(other.digits) {}
+
+    Big& operator=(const Big& other) {
+        digits = other.digits;
+        return *this;
+    }
+
+    Big operator+(const Big& other) const {
+        Big result;
+        result.digits.clear();
+
+        int carry = 0;
+        int maxSize = max(digits.size(), other.digits.size());
+        
+        for (int i = 0; i < maxSize || carry; i++) {
+            int sum = carry;
+            if (i < digits.size()) sum += digits[i];
+            if (i < other.digits.size()) sum += other.digits[i];
+            
+            carry = sum >= BASE;
+            if (carry) sum -= BASE;
+            
+            result.digits.push_back(sum);
+        }
+        
+        return result;
+    }
+
+    // 假设当前数 >= other
+    Big operator-(const Big& other) const {
+        Big result;
+        result.digits.clear();
+        
+        int borrow = 0;
+        for (int i = 0; i < digits.size(); i++) {
+            int diff = digits[i] - borrow;
+            if (i < other.digits.size()) diff -= other.digits[i];
+            
+            borrow = 0;
+            if (diff < 0) {
+                diff += BASE;
+                borrow = 1;
+            }
+            
+            result.digits.push_back(diff);
+        }
+        
+        // 去除前导零
+        while (result.digits.size() > 1 && result.digits.back() == 0)
+            result.digits.pop_back();
+        
+        return result;
+    }
+
+    Big operator*(const int& other) const {
+        if (other == 0) return Big(0);
+        
+        Big result;
+        result.digits.clear();
+        
+        long long carry = 0;
+        for (int i = 0; i < digits.size() || carry; i++) {
+            if (i < digits.size()) carry += (long long)digits[i] * other;
+            
+            result.digits.push_back(carry % BASE);
+            carry /= BASE;
+        }
+        
+        while (result.digits.size() > 1 && result.digits.back() == 0)
+            result.digits.pop_back();
+            
+        return result;
+    }
+
+    Big operator*(const Big& other) const {
+        if (other == 0) return Big(0);
+        
+        Big result;
+        result.digits.resize(digits.size() + other.digits.size(), 0);
+        
+        for (int i = 0; i < digits.size(); i++) {
+            long long carry = 0;
+            for (int j = 0; j < other.digits.size() || carry; j++) {
+                long long product = result.digits[i + j] + carry;
+                if (j < other.digits.size()) 
+                    product += (long long)digits[i] * other.digits[j];
+                
+                result.digits[i + j] = product % BASE;
+                carry = product / BASE;
+            }
+        }
+        
+        // 去除前导零
+        while (result.digits.size() > 1 && result.digits.back() == 0)
+            result.digits.pop_back();
+            
+        return result;
+    }
+
+    Big operator/(const int& divisor) const {
+        Big result;
+        result.digits.resize(digits.size());
+        
+        long long remainder = 0;
+        for (int i = digits.size() - 1; i >= 0; i--) {
+            long long current = remainder * BASE + digits[i];
+            result.digits[i] = current / divisor;
+            remainder = current % divisor;
+        }
+        
+        // 去除前导零
+        while (result.digits.size() > 1 && result.digits.back() == 0)
+            result.digits.pop_back();
+            
+        return result;
+    }
+
+    int operator%(const int& divisor) const {
+        long long remain = 0;
+        for (int i = digits.size() - 1; i >= 0; i--) {
+            remain = (remain * BASE + digits[i]) % divisor;
+        }
+        return remain;
+    }
+
+    Big operator^(long long exponent) const {
+        Big base(*this);
+        Big result(1);
+        
+        while (exponent > 0) {
+            if (exponent & 1) 
+                result = result * base;
+            
+            base = base * base;
+            exponent >>= 1;
+        }
+        
+        return result;
+    }
+
+    bool operator<(const Big& other) const { return cmp(other) == -1; }
+    bool operator<=(const Big& other) const { return cmp(other) <= 0; }
+    bool operator>(const Big& other) const { return cmp(other) == 1; }
+    bool operator>=(const Big& other) const { return cmp(other) >= 0; }
+    bool operator==(const Big& other) const { return cmp(other) == 0; }
+    bool operator!=(const Big& other) const { return cmp(other) != 0; }
+    
+    bool operator<(long long num) const { return *this < Big(num); }
+    bool operator>(long long num) const { return *this > Big(num); }
+    bool operator<=(long long num) const { return *this <= Big(num); }
+    bool operator>=(long long num) const { return *this >= Big(num); }
+    bool operator==(long long num) const { return *this == Big(num); }
+    bool operator!=(long long num) const { return *this != Big(num); }
+    
+    void print() const {
+        cout << digits.back(); // 最高位不需要前导零
+        
+        for (int i = digits.size() - 2; i >= 0; i--) 
+            cout << setw(BASE_DIGITS) << setfill('0') << digits[i];
+    }
+    
+    string toString() const {
+        string result;
+        result += to_string(digits.back());
+        
+        for (int i = digits.size() - 2; i >= 0; i--) {
+            string segment = to_string(digits[i]);
+            result += string(BASE_DIGITS - segment.size(), '0') + segment;
+        }
+        return result;
+    }
+    
+    friend ostream& operator<<(ostream& os, const Big& num) {
+        os << num.digits.back();
+        for (int i = num.digits.size() - 2; i >= 0; i--) 
+            os << setw(BASE_DIGITS) << setfill('0') << num.digits[i];
+        return os;
+    }
+};
+\end{lstlisting}
+
+
+
+% ===== 正确使用 newpage =====
+\newpage % 此处强制分页
+
+\section{搜索}
+% 正常内容（删除 moca 123）
+
+\newpage
+\section{数学}
+
+\subsection{数论}
+
+\subsubsection{判定质数}
+试除法判定某个数是不是质数，时间复杂度 $\mathrm{O(\sqrt{n})}$。
+\begin{lstlisting}[caption=判定素数]
+bool is_prime(int n) {
+    if(n < 2)
+        return false;
+    for(int i = 2; i <= sqrt(n); i++)
+        if(n % i == 0)
+            return false;
+    return true;
+}
+\end{lstlisting}
+
+\subsubsection{埃氏筛}
+时间复杂度 $\mathrm{O(nloglogn)}$。
+
+\begin{lstlisting}[caption=埃氏筛]
+const int N = 1e6 + 5;
+int v[N], prime[N], m;
+void primes(int n) {
+	memset(v, 0, sizeof(v));
+	for(int i = 2; i <= n; i++) {
+		if(v[i])
+			continue;
+		prime[++m] = i;
+		for(int j = i; j <= n / i; j++)
+			v[i * j] = 1;
+	}
+}
+\end{lstlisting}
+
+\subsubsection{线性筛}
+线性素数筛，最后 $\mathrm{prime[1 \sim m]}$ 中保存着 $\mathrm{1 \sim m}$ 范围内的所有素数，$\mathrm{v[i]}$ 保存着 $\mathrm{i}$ 的最小质因子。时间复杂度 $\mathrm{O(n)}$。
+\begin{lstlisting}[caption=线性筛]
+const int N = 1e6 + 5;
+int v[N], prime[N], m;
+void primes(int n) {
+    memset(v, 0, sizeof(v));
+    m = 0;
+    for(int i = 2; i <= n; i++) {
+        if(v[i] == 0)
+            v[i] = i, prime[++m] = i;
+        
+        for(int j = 1; j <= m; j++) {
+            if(prime[j] > v[i] || prime[j] > n / i)
+                break;
+            v[i * prime[j]] = prime[j];
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{分解质因数}
+时间复杂度 $\mathrm{O(\sqrt{n})}$。
+\begin{lstlisting}[caption=分解质因数]
+const int N = 1e5 + 5;
+int p[N], c[N], m;
+
+void divide(int n) {
+    m = 0;
+    for(int i = 2; i <= sqrt(n); i++) {
+        if(n % i == 0) {
+            p[++m] = i, c[m] = 0;
+            while(n % i == 0)
+                n /= i, c[m]++;
+        }
+    }
+
+    if(n > 1)
+        p[++m] = n, c[m] = 1;
+}
+\end{lstlisting}
+
+\subsubsection{求 n 的正约数集合}
+试除法，时间复杂度 $\mathrm{O(\sqrt{n})}$，约数个数上界 $\mathrm{2\sqrt{n}}$。
+\begin{lstlisting}[caption=试除法求 n 的正约数集合]
+int factor[1600], m = 0;
+void divide(int n) {
+    for(int i = 1; i * i <= n; i++) 
+        if(n % i == 0) {
+            factor[++m] = i;
+            if(i != n / i)
+                factor[++m] = n / i;
+        }
+}
+\end{lstlisting}
+
+\subsubsection{求 1 $\sim$ n 的正约数集合}
+倍数法，时间复杂度 $\mathrm{NlogN}$。
+\begin{lstlisting}[caption=倍数法求 1 $\sim$ n 的正约数集合]
+vector<int> factor[500010];
+void times(int n) {
+    for(int i = 1; i <= n; i++)
+        for(int j = 1; j <= n / i; j++)
+            factor[i * j].push_back(i);
+}
+\end{lstlisting}
+
+\subsubsection{欧几里得算法求 gcd}
+时间复杂度 $\mathrm{log(a + b)}$。当需要做高精度运算时，建议使用更相减损术代替。
+\begin{lstlisting}[caption=欧几里得算法求 gcd]
+int gcd(int a, int b) {
+	return b ? gcd(b, a % b) : a;
+}
+\end{lstlisting}
+
+\subsubsection{Stein 算法求大整数 gcd}
+大整数取模的时间复杂度较高，而加减法时间复杂度较低。针对大整数，我们可以用加减代替乘除求出最大公约数。利用 Stein 算法，时间复杂度 $\mathrm{O(log(n))}$。为了优化常数，可以使用压位高精度。
+
+若 $\mathrm{a = b}$，则 $\mathrm{gcd(a,b) = a}$，否则：
+\begin{itemize}
+\item 若 $\mathrm{a,b}$ 均为偶数，则 $\mathrm{gcd(a,b) = 2 gcd(\frac{a}{2}, \frac{b}{2})}$
+\item 若 $\mathrm{a}$ 为偶数，$\mathrm{b}$ 为奇数，则 $\mathrm{gcd(a,b) = gcd(\frac{a}{2}, b)}$
+\item 若 $\mathrm{a,b}$ 同为奇数，则 $\mathrm{gcd(a,b) = gcd(a -b, b)}$
+\end{itemize}
+\begin{lstlisting}[caption=Stein 算法]
+// 基于压位高精度类实现
+Big Stein(Big A, Big B) {
+    int shift = 0;
+    while(A != 0 && B != 0) {
+        bool f1 = (A.digits[0] % 2) == 0, f2 = (B.digits[0] % 2) == 0;
+
+        if(f1 && f2) 
+            A = A / 2, B = B / 2, shift++;
+        else if(f1)
+            A = A / 2;
+        else if(f2) 
+            B = B / 2;
+        else {
+            if(A >= B)
+                A = A - B;
+            else
+                B = B - A;
+        }
+    }
+
+    Big result = Big(A == 0 ? B : A);
+	return result * (Big(2) ^ shift);
+}
+\end{lstlisting}
+
+\subsubsection{裴蜀定理}
+对任意整数 $\mathrm{a,b}$，存在一对整数 $\mathrm{x,y}$，$\mathrm{s.t. \ ax + by = gcd(a,b)}$ 
+
+\noindent \textbf{逆定理：}
+
+设 $\mathrm{a,b}$ 是不全为 $\mathrm{0}$ 的整数，若 $\mathrm{d > 0}$ 是 $\mathrm{a,b}$ 的公因数，且存在整数 $\mathrm{x,y}$，$\mathrm{s.t. \ ax + by = d}$，则 $\mathrm{d = gcd(a,b)}$。
+
+设 $\mathrm{a,b}$ 是不全为 $\mathrm{0}$ 的整数，且存在整数 $\mathrm{x,y}$，$\mathrm{s.t. \ ax + by = 1}$，则 $\mathrm{a,b}$ 互质。
+
+
+\subsubsection{扩展欧几里得算法}
+用于求解 $\mathrm{ax + by = gcd(a,b)}$ 的一组特解。
+\begin{lstlisting}[caption=扩展欧几里得算法]
+// 返回 a b 的最大公约数 d，并找到一组特解 x0 y0
+int exgcd(int a, int b, int &x, int &y) {
+	if(b == 0) {
+		x = 1;
+		y = 0;
+		return a;
+	}
+	int d = exgcd(b, a % b, x, y);
+	int z = x;
+	x = y;
+	y = z - y * (a / b);
+	return d;
+}
+\end{lstlisting}
+更一般地，对于方程 $\mathrm{ax + by = c}$，它有解当且仅当 $\mathrm{d \mid c}$。我们可以先求出 $\mathrm{ax + by = d}$ 的一组特解 $\mathrm{x_0, y_0}$，然后就得到了 $\mathrm{ax + by = c}$ 的一组特解 $\mathrm{(c/d)x_0, (c/d)y_0}$。则 $\mathrm{ax + by = c}$ 的通解可表示为：
+$$
+\mathrm{x = \frac{c}{d}x_0 + k\frac{b}{d},\ y = \frac{c}{d}y_0 - k\frac{a}{d}}
+$$
+其中 $\mathrm{k}$ 取遍整数集合。
+
+
+\subsubsection{线性同余方程}
+求一个整数 $\mathrm{x}$ 满足 $\mathrm{ax \equiv b\ (\bmod m) }$，或者给出无解。
+
+方程可改写为 $\mathrm{ax + my = b}$，设 $\mathrm{d = gcd(a,m)}$ 故线性同余方程有解当且仅当 $\mathrm{d \mid b}$，利用丢番图方程相关知识，知道 $\mathrm{x = x_0 \times b / d}$ 是原线性同余方程的一个特解；方程恰有 $\mathrm{d}$ 个模 $\mathrm{m}$ 不同余的解，为 $\mathrm{x_i = x + i \times (m/d), \ 0 \le i \le d - 1}$。
+
+
+\subsubsection{乘法逆元}
+若 $\mathrm{ax \equiv 1 \ (\bmod\  m)}$，则称 $\mathrm{x}$ 为 $\mathrm{a}$ 模 $\mathrm{m}$ 的逆元，记作 $\mathrm{a^{-1}\  (\bmod \ m)}$。
+
+根据费马小定理，当 $\mathrm{m}$ 为质数时，$\mathrm{b^{m - 2}}$ 即为 $\mathrm{b}$ 的乘法逆元。 
+
+只有 $\mathrm{gcd(a,m) = 1}$ 时才存在乘法逆元，可用扩展欧几里得算法求逆元（本质上还是解线性同余方程）。
+\begin{lstlisting}[caption=乘法逆元]
+// 扩展欧几里得算法求最小正整数逆元
+void exgcd(int a,int b, int &x, int &y) {
+	if(!b) {
+		x = 1;
+		y = 0;
+		return ;
+	}
+	exgcd(b, a % b, y, x);
+	y -= a / b * x;
+}
+
+// 求 n mod p 的逆元
+// 前提是 n 与 p 互质
+int inv(int n, int p) {
+	int x, y;
+	exgcd(n, p, x, y);
+	return (x + p) % p;
+}
+\end{lstlisting}
+
+
+\subsubsection{线性求 1 $\sim$ N 的逆元}
+\textbf{重要前提：p 是质数。}
+
+显然，1 对 p 的逆元是 1。
+
+对于某个数 i，利用带余除法，有 $p = k \times i + j$，有 $k \times i + j \equiv 0 (\bmod\ p)$，有  $k \times j ^ {-1} + i ^ {-1} \equiv 0 (\bmod\ p)$，即 $i ^ {-1} \equiv -\lfloor \frac{p}{i} \rfloor \times (p \bmod\ i)^{-1} (\bmod\ p)$。
+
+$$
+i^{-1} \equiv\left\{\begin{array}{ll}
+1, & \text { if } i=1, \\
+-\left\lfloor\frac{p}{i}\right\rfloor(p \bmod i)^{-1}, & \text { otherwise. }
+\end{array} \quad(\bmod p)\right.
+$$
+
+\begin{lstlisting}[caption=线性求逆元]
+// 线性求 1 ~ n mod p 的逆元
+// 前提是 p 是质数
+int get_inv(int n, int p) {
+	inv[1] = 1;
+	for (int i = 2; i <= n; ++i) {
+ 		inv[i] = (long long)(p - p / i) * inv[p % i] % p;
+	}
+}
+\end{lstlisting}
+
+
+\subsubsection{欧拉函数}
+$\mathrm{1 \sim N}$ 中与 $\mathrm{N}$ 互质的数的个数被称为欧拉函数。
+
+若在算数基本定理中，$\mathrm{N = p_1^{c_1}p_2^{c_2}\cdots p_m^{c_m}}$，则
+
+$$
+\mathrm{\varphi(N) = N \times \frac{p_1 - 1}{p_1} \times \frac{p_2 - 1}{p_2} \times \cdots \times \frac{p_m - 1}{p_m} = N \times \prod_{prime\ p \mid N} (1 - \frac{1}{p})}
+$$
+\begin{lstlisting}[caption=欧拉函数]
+// 求单个数的 Euler 函数，时间复杂度 O(sqrt(n))
+int phi(int n) {
+	int ans = n;
+	for(int i = 2; i <= sqrt(n); i++) 
+		if(n % i == 0) {
+			ans = ans / i * (i - 1);
+			while(n % i == 0)
+				n /= i;
+		}
+	if(n > 1)
+		ans = ans / n * (n - 1);
+	return ans;
+}
+\end{lstlisting}
+\noindent \textbf{欧拉函数的性质}
+\begin{enumerate}
+	\item $\mathrm{\varphi}$ 是积性函数
+	\item 若 $\mathrm{f}$ 是积性函数，且在算数基本定理中有 $\mathrm{n = p_1^{c_1}p_2^{c_2}\cdots p_m^{c_m}}$，则 $\mathrm{f(n) = \begin{matrix} \prod_{i=1}^m f(p_i^{c_i}) \end{matrix}}$
+	\item $\mathrm{\forall \  n > 1}$，$\mathrm{1 \sim n}$ 中与 $\mathrm{n}$ 互质的数和为 $\mathrm{n \times \varphi(n) / 2}$
+	\item 设 $\mathrm{p}$ 为质数，若 $\mathrm{p \mid n}$ 且 $\mathrm{p^2 \mid n}$，则 $\mathrm{\varphi(n) = \varphi(n / p) \times p}$
+	\item 设 $\mathrm{p}$ 为质数，若 $\mathrm{p \mid n}$ 且 $\mathrm{p^2 \nmid n}$，则 $\mathrm{\varphi(n) = \varphi(n / p) \times (p - 1)}$
+	\item $\mathrm{\begin{matrix} \sum_{d \mid n} \end{matrix} \varphi(d) = n}$
+	\item 若 $\mathrm{n = p^k}$，其中 $\mathrm{p}$ 是质数，那么 $\mathrm{\varphi(n) = p^k - p^{k - 1}}$
+	\item 若 $\mathrm{n}$ 是质数，显然有 $\mathrm{\varphi(n) = n - 1}$
+\end{enumerate}
+
+第二条对所有积性函数都适用，后面几条仅对欧拉函数适用。
+
+
+\subsubsection{求 $2 \sim N$ 中每个数的欧拉函数}
+利用线性筛法中，每个数字都会被自己的最小质因子筛掉的性质，以及上面的性质 4、5，进行优化。时间复杂度 $\mathrm{O(n)}$。
+\begin{lstlisting}[caption=求 2 $\sim$ N 中每个数的欧拉函数]
+int v[maxn], prime[maxn], phi[maxn];
+void euler(int n) {
+	// v 用来记录最小质因子
+	memset(v, 0, sizeof(v));
+	m = 0;
+	for(int i = 2; i <= n; i++) {
+		if(v[i] == 0) {
+			v[i] = i, prime[++m] = i;
+			phi[i] = i - 1;
+		}
+		for(int j = 1; j <= m; j++) {
+			if(prime[j] > v[i] || prime[j] > n / i)
+				break;
+			v[i * prime[j]] = prime[j];
+			phi[i * prime[j]] = phi[i] * (i % prime[j] ? prime[j] - 1 : prime[j]);
+		}
+	}
+}
+\end{lstlisting}
+
+
+\subsubsection{欧拉定理}
+\noindent \textbf{费马小定理}
+
+若 $\mathrm{p}$ 是质数，则 $\mathrm{a^p \equiv a (\bmod\  p)}$，实际上是欧拉定理的特殊情况。
+
+\noindent \textbf{欧拉定理}
+
+若正整数 $\mathrm{a, n}$ 互质，则 $\mathrm{a^{\varphi(n)} \equiv 1(\bmod \ n)}$。
+
+
+\subsubsection{扩展欧拉定理}
+用于降幂：
+$$
+\mathrm{a^b \equiv \begin{cases}a^{b \bmod \varphi(n)}, & \operatorname{gcd}(a, n)=1, \\ a^b, & \operatorname{gcd}(a, n) \neq 1, b<\varphi(n), \quad(\bmod\  n) \\ a^{(b \bmod \varphi(n))+\varphi(n)}, & \operatorname{gcd}(a, n) \neq 1, b \geq \varphi(n) .\end{cases}}
+$$
+\begin{lstlisting}[caption=扩展欧拉定理]
+// 其中 a 和 n 都是 int；b 是大整数
+int ExEuler(int a, Big b, int n) {
+    int phi_n = phi(n);
+    if(gcd(a, n) == 1) 
+        return quickPow(a, b % phi_n, n);
+    else if(b < phi_n) 
+        return quickPow(a, b, n);
+    return quickPow(a, b % phi_n + phi_n, n);
+}
+\end{lstlisting}
+
+
+\subsubsection{中国剩余定理求解线性同余方程组}
+设 $\mathrm{m_1, m_2, \cdots , m_n}$ 是两两互质的整数，$\mathrm{m = \begin{matrix} \prod_{i = 1}^n m_i \end{matrix}}$，$\mathrm{M_i =m / m_i}$，$\mathrm{t_i}$ 是线性同余方程 $\mathrm{M_it_i \equiv 1\ (\bmod \ m_i)}$ 的一个解。对于任意的 $\mathrm{n}$ 个整数 $\mathrm{a_1, a_2, \cdots, a_n}$，方程组
+
+$$
+\begin{cases} 
+x \equiv a_1\ (\bmod \ m_1) \\
+x \equiv a_2\ (\bmod \ m_2) \\
+\vdots \\
+x \equiv a_n\ (\bmod \ m_n)
+\end{cases}
+$$
+
+有整数解，解为 $\mathrm{x = \begin{matrix} \sum_{i = 1}^n \end{matrix} a_iM_it_i}$，在模 $\mathrm{m}$ 意义下有唯一解。
+\begin{lstlisting}[caption=中国剩余定理]
+// 求同余方程组最小非负整数解
+int intChina(int r) {
+	int Mi, x0, y0, d, ans = 0;
+	int M = 1;
+	for(int i = 1; i <= r; i++)
+		M *= m[i];
+	for(int i = 1; i <= r; i++) {
+		Mi = M / m[i];
+		// 求出每个 ti 的逆元
+		exgcd(Mi, m[i], x0, y0);
+		ans = (ans + Mi * x0 * a[i]) % M;
+	}
+	
+	return (ans + M) % M;
+}
+\end{lstlisting}
+
+
+\subsubsection{扩展中国剩余定理}
+中国剩余定理要求 $\mathrm{N}$ 个模数两两互质，其实这个条件表苛刻。当 $\mathrm{N}$ 个模数不满足两两互质时，中国剩余定理不再适用。
+可以考虑用数学归纳法，假设已经求出了前 $\mathrm{k-1}$ 个方程构成的方程组的一个解 $\mathrm{x}$。记 $\mathrm{m = lcm(m_1, m_2, \cdots, m_{k - 1})}$，则 $\mathrm{x + i \times m\ (i \in Z)}$ 是前 $\mathrm{k - 1}$ 个方程的通解。
+
+考虑第 $\mathrm{k}$ 个方程，求出一个整数 $\mathrm{t}$，$\mathrm{s.t.\ x + t \times m \equiv a_k \ (\bmod \ m_k)}$，该方程等价于$\mathrm{t \times m \equiv a_k - x \ (\bmod \ m_k)}$，其中 $\mathrm{t}$ 是未知量，这就是一个线性同余方程，可以使用 exgcd 求解。若有解，则 $\mathrm{x’ = x + t \times m}$ 就是前 $\mathrm{k}$ 个方程构成的方程组的一个解。
+
+简单来说，就是使用 $\mathrm{n}$ 次扩展欧几里得算法。
+\begin{lstlisting}[caption=扩展中国剩余定理]
+// EXCRT，用来解决模数不一定两两互质的情况
+// 容易溢出时将数据类型都换为 __int128_t
+ll excrt(int n) {
+	// x 保存前 k - 1 个方程的解, M 保存前 k - 1 个数的 lcm
+	ll x = a[1] % m[1], M = m[1];
+	for(int i = 2; i <= n ;i++) {
+		ll t, y;
+		ll d = exgcd(M, m[i], t, y);
+		t = (a[i] - x) / d * t;
+		x = x + t * M;
+		M = lcm(M, m[i]);
+		x = (x % M + M) % M;
+	}
+	return x;
+}
+\end{lstlisting}
+
+
+\subsubsection{高次同余方程}
+给定整数 $\mathrm{a,b,p}$，其中 $\mathrm{a,p}$ 互质，求一个非负整数 $\mathrm{x}$，$\mathrm{s.t. \ a^x \equiv b\ (\bmod \ p)}$。
+\begin{lstlisting}[caption=BSGS 求解高次同余方程]
+// Baby Step, Giant Step 算法
+// 注意：a 与 p 必须互质
+// 无解时返回 -1
+int BSGS(int a, int b, int p) {
+	map<int, int> hash;
+	hash.clear();
+	b %= p;
+	int t = (int)sqrt(p) + 1;
+	for(int j = 0; j < t; j++) {
+		int val = (long long)b * pow(a, j, p) % p;
+		hash[val] = j;
+	}
+	a = pow(a, t, p);
+	if(a == 0)
+		return b == 0 ? 1 : -1;
+	for(int i = 0; i <= t; i++) {
+		int val = pow(a, i, p);
+		int j = hash.find(val) == hash.end() ? -1 : hash[val];
+		if(j >= 0 && i * t >= j)
+			return i * t - j;
+	}
+	return -1;
+}
+\end{lstlisting}
+
+
+\subsubsection{阶乘取模问题}
+由中国剩余定理，阶乘取模问题可以转化为模数为素数幂 $p^\alpha$ 的情形，可以对 $n!$ 做如下分解：
+$$
+n!=p^{\nu_p(n!)}(n!)_p
+$$
+
+
+其中，$\nu_p(n!)$ 表示阶乘 $n!$ 的素因数分解中 $p$ 的幂次，$(n!)_p$ 表示在阶乘 $n!$ 的结果中去除所有 $p$ 的幂次得到的整数。下面将讨论 $(n!)_p$ 在素数幂模下的余数以及幂次 $\nu_p(n!)$ 的具体计算方法。
+
+\noindent \textbf{Wilson 定理}
+
+对于自然数 $n>1$，当且仅当 $n$ 是素数时，$(n-1)!\equiv -1\pmod n$。
+
+推广之后，可以求出 $(n!)_p$。预处理的时间复杂度为 $O(p^\alpha)$，单次询问的时间复杂度为 $O(\log_p n)$。
+\begin{lstlisting}[caption=利用推广的 Wilson 定理求 $(n!)_p$]
+// Calculate (n!)_p mod pa.
+// pa 是某个素数的幂次
+int factmod(int n, int p, int pa) {
+    std::vector<int> f(pa);
+    f[0] = 1;
+    for (int i = 1; i < pa; ++i)
+        f[i] = i % p ? (long long)f[i - 1] * i % pa : f[i - 1];
+    bool neg = p != 2 || pa <= 4;
+    int res = 1;
+    while (n > 1) {
+        if ((n / pa) & neg)
+            res = pa - res;
+        res = (long long)res * f[n % pa] % pa;
+        n /= p;
+    }
+    return res;
+}
+\end{lstlisting}
+
+
+\noindent \textbf{Legendre 公式}
+
+Legendre 公式 可以求出 $\mathrm{p}$ 的幂次 $\nu_p(n!)$。它的时间复杂度为 $O(\log n)$。
+\begin{lstlisting}[caption=利用 Legendre 公式求 $\nu_p(n!)$]
+// Obtain multiplicity of p in n!.
+int multiplicity_factorial(int n, int p) {
+    int count = 0;
+    do {
+        n /= p;
+        count += n;
+    } while (n);
+    return count;
+}
+\end{lstlisting}
+利用上面两个公式可以在 $O(logn)$ 时间内求出阶乘的模（只能求出模数为质数的幂次的情景，当模数不是质数幂次时可以用中国剩余定理进行求解）。
+
+
+\subsection{线性代数}
+
+
+\subsubsection{矩阵乘法}
+矩阵乘法满足结合律、分配率，但不满足交换律。
+
+矩阵相当于状态转移，一维空间状态转移矩阵中 $\mathrm{A_{i,j}}$ 表示状态 $\mathrm{i}$ 如何递推，得到下一时刻的状态 $\mathrm{j}$。同理可扩展到高维空间（但是建议在代码实现层面，将高维空间压缩为一维空间）。
+
+简单来说，状态转移矩阵中每个位置的值由状态 $\mathrm{i}$ 如何转移到状态 $\mathrm{j}$ 决定。
+\begin{lstlisting}[caption=矩阵快速幂]
+// 矩阵乘法加速线性递推：矩阵快速幂
+// 时间复杂度 O(n^3logT)，其中 T 是递推总轮数
+struct matrix {
+	ll a[sz][sz];
+	
+	matrix() {memset(a, 0, sizeof(a));}
+	
+	matrix operator*(const matrix& T) const {
+    matrix res;
+    int r;
+    for (int i = 0; i < sz; ++i)
+      for (int k = 0; k < sz; ++k) {
+        r = a[i][k];
+        for (int j = 0; j < sz; ++j)
+          res.a[i][j] += T.a[k][j] * r, res.a[i][j] %= mod;
+      }
+    return res;
+  }
+}
+
+matrix matQuickPow(matrix a, int b) {
+	matrix ret;
+	for(int i = 0; i < sz; i++)
+		ret.a[i][i] = 1;
+	while(b) {
+		if(b & 1)
+			ret = ret * a;
+		a = a * a;
+		b >>= 1;
+	}
+	return ret;
+}
+\end{lstlisting}
+
+
+\subsubsection{高斯消元法求解线性方程组}
+高斯消元用来求解线性方程组。
+
+线性方程组的所有系数可以写成一个 $\mathrm{m \times n}$ 的系数矩阵，再加上每个方程等号右侧的常数，可以写成一个 $\mathrm{m \times (n + 1)}$ 的增广矩阵， 然后对增广矩阵进行初等行变换：
+
+- 用一个非零的数乘某一行
+- 把其中一行的若干倍加到另一行上
+- 交换两行的位置
+
+直到将增广矩阵化为一个上三角矩阵，依次回带，得到一个简化阶梯型矩阵，给出了方程组的解。
+
+高斯消元完成后，若存在系数全为零，常数不为零的行，则方程组无解；若主元恰好有 $\mathrm{n}$ 个，方程组有唯一解；若主元有 $\mathrm{k < n}$ 个，方程组有无穷多个解。
+
+高斯消元法就是通过初等行变换把增广矩阵变为简化阶梯型矩阵的线性方程组求解算法。
+\begin{lstlisting}[caption=高斯消元法]
+// 时间复杂度 O(n^3)
+// 无解时输出 -1, 无穷多解时输出 0
+void gaussElimination(int n) {
+	int nwline = 0;
+	for(int k = 0; k < n; k++) {
+		// 用于行主元选取
+		int maxRow = nwline;
+		for(int i = nwline + 1; i < n; i++)
+			if(fabs(p[i][k]) > fabs(p[maxRow][k]))
+				maxRow = i;
+		
+		if(fabs(p[maxRow][k]) < eps)
+			continue;
+		
+		// 交换当前行和最大元素所在行
+		for(int i = 0; i <= n; i++)
+			swap(p[nwline][i], p[maxRow][i]);
+		
+		for(int i = 0; i < n; i++) {
+			if(i == nwline)
+				continue;
+			double mul = p[i][k] / p[nwline][k];
+			for(int j = k; j <= n; j++)
+				p[i][j] -= p[nwline][j] * mul;
+		}
+		nwline++;
+	}
+	
+	// 存在找不到主元的情况
+	// 一定是无解或者无穷多解，优先判断无解
+	if(nwline < n) {
+		while(nwline < n) 
+			if(!(fabs(p[nwline++][n]) < eps)) {
+				printf("-1");
+				return ;
+			}
+		printf("0");
+		return ;
+	}
+	
+	for(int i = 0; i < n; i++)
+		printf("%.2lf\n", fabs(p[i][n] / p[i][i]) < eps ? 0 : p[i][n] / p[i][i]);
+}
+\end{lstlisting}
+
+
+\subsubsection{高斯消元法求解异或方程组}
+$$
+\mathrm{\begin{cases}a_{1,1} x_1 \oplus a_{1,2} x_2 \oplus \cdots \oplus a_{1, n} x_n & =b_1 \\ a_{2,1} x_1 \oplus a_{2,2} x_2 \oplus \cdots \oplus a_{2, n} x_n & =b_2 \\ \cdots & \cdots \\ a_{m, 1} x_1 \oplus a_{m, 2} x_2 \oplus \cdots \oplus a_{m, n} x_n & =b_1\end{cases}}
+$$
+
+由于异或满足交换律和结合律，故可以用高斯消元法解决异或方程组。当异或方程组多解时，解的数量就是 $\mathrm{2^{cnt}}$，其中 $\mathrm{cnt}$ 是自由变元的个数，因为自由变元任取 $\mathrm{0}$ 或 $\mathrm{1}$。
+\begin{lstlisting}[caption=高斯消元法]
+// 时间复杂度 O(n^2m / w)，w 是利用压位进行优化
+
+void gaussElimination(int n) {
+	int ans = 1;
+	for(int i = 1; i <= n; i++) {
+		for(int j = i + 1; j <= n; j++) 
+			if(a[j] > a[i])
+				swap(a[i], a[j]);
+				
+		// 消元完毕，有 i - 1 个主元，n - i + 1 个自由元
+		if(a[i] == 0) {
+			ans = 1 << (n - i + 1);
+			break;
+		}
+		
+		// 出现 0 = 1，无解
+		if(a[i] == 1) {
+			ans = 0;
+			break;
+		}
+		
+		for(int k = n; k; k--)
+			if(a[i] >> k & 1) {
+				for(int j = 1; j <= n; j++)
+					if(i != j && (a[j] >> k & 1))
+						a[j] ^= a[i];
+						
+				break;
+			}
+	}
+	
+	if(ans == 0)
+		printf("No Solution!");
+	else if(ans != 1)
+		printf("%d", ans);
+	else {
+		for(int i = 1; i <= n; i++)
+			printf("%d : %d\n", i, a[i] & 1);
+	}
+}
+\end{lstlisting}
+
+
+\subsubsection{线性基}
+线性空间是一个关于向量加法和数乘运算封闭的向量集合。任意选出线性空间中的若干个向量，若其中存在一个向量能被其它向量表出，则称这些向量线性相关，否则称这些向量线性无关。线性空间的极大线性无关子集称为基，基包含的向量个数称为线性空间的维数。
+
+通过原集合 $\mathrm{S}$ 的某一最小子集 $\mathrm{S_1}$ 内元素相互异或得到的值域与原集合 $\mathrm{S}$ 相互异或所得到的值域相同。也就是说在 $\mathrm{\bmod \  2}$ 意义下，有 $\mathrm{n}$ 个长度为 $\mathrm{m}$ 的向量，这 $\mathrm{n}$ 个向量的线性基为其所组成的线性空间的基。
+
+\begin{enumerate}
+	\item 原序列里面的任意一个数都可以由线性基里面的一些数异或得到
+	\item 线性基里面的任意一些数异或起来都不能得到 0
+	\item 线性基里面的数的个数唯一，并且在保持性质一的前提下，数的个数是最少的
+\end{enumerate}
+\noindent \textbf{增量法构造线性基} 
+\begin{lstlisting}[caption=增量法构造线性基]
+void addnum(ll x) {
+	for(int i = 60; i >= 0; i--)
+		if((x >> i) & 1) {
+			if(d[i]) 
+				x ^= d[i];
+			else {
+				d[i] = x;
+				break;
+			}
+		}
+}
+\end{lstlisting}
+\noindent \textbf{线性基求异或最大值} 
+\begin{lstlisting}[caption=线性基求异或最大值]
+ll getmax() {
+    ll res = 0;
+    for(int i = 60; i >= 0; i--)
+        if((res ^ d[i]) > res)
+            res ^= d[i];
+    return res;
+}
+\end{lstlisting}
+\noindent \textbf{线性基求异或最小值} 
+\begin{lstlisting}[caption=线性基求异或最小值]
+ll getmin() {
+    ll res = 0, cnt = 0;
+    for(int i = 60; i >= 0; i--)
+        if(d[i])
+            cnt++, res = d[i];
+    return cnt < n ? 0 : res;
+}
+\end{lstlisting}
+\noindent \textbf{线性基求异或第 k 大值（结果去重）} 
+
+可以将线性基消成对角矩阵，这样就得到了一组各个维度上互不重合的线性基，显然他们有明确的大小顺序。
+
+如果原数能异或出 $\mathrm{0}$ 的话（即原数集线性相关），那么 $\mathrm{0}$ 作为最小值，我们就要找线性基能组成的第 $\mathrm{k - 1}$ 大的值。
+
+第 $\mathrm{j}$ 大的值就是对 $\mathrm{j}$ 进行二进制拆分后取走对应的线性基组合。
+\begin{lstlisting}[caption=线性基求异或第 k 大值（结果去重）]
+// 线性基对角化
+void change() {
+	for(int i = 60; i >= 0; i--) 
+		for(int j = i - 1; j >= 0; j--)
+			if((d[i] >> j) & 1)
+				d[i] ^= d[j];
+	for(int i = 0; i <= 60; i++)
+		if(d[i])
+			d2[cnt++] = d[i];
+}
+
+ll query(ll k) {
+	if(n > cnt)
+		k--;
+	if(k >= (1ll << cnt)) 
+		return -1;
+	ll ret = 0;
+	for(int i = 0; i < cnt; i++)
+		if((k >> i) & 1)
+			ret ^= d2[i];
+	return ret;
+}
+\end{lstlisting}
+\noindent \textbf{线性基求异或第 k 大值（结果不去重）} 
+
+求出一组基后，不在线性基中的整数还有 $\mathrm{n - t}$ 个，从其中任选若干个，显然有 $\mathrm{2^{n - t}}$ 种选法，每种选法与基底结合，由于结果不重复（异或的性质），且所有结果都能被基底表示出来，所以显然恰好遍历去重异或集合一次。
+
+综上，不去重异或集合就是去重异或集合中的 $\mathrm{2^t}$ 个整数各重复 $\mathrm{2^{n - t}}$ 次形成的。
+
+
+
+
+\subsection{组合数学}
+\subsubsection{组合数}
+\noindent $\mathrm{C^n_m = C^n_{n - m}}$
+
+\noindent $\mathrm{C^n_m = C^n_{m - 1} + C^{n - 1}_{m - 1}}$
+
+\noindent $\mathrm{C^n_0 + C^n_1 + \cdots + C^n_n = 2^n}$
+
+根据性质 $\mathrm{2}$，可以在时间复杂度 $\mathrm{O(n^2)}$ 内求出 $\mathrm{0 \le y \le x \le n}$ 的所有组合数 $\mathrm{C^x_y}$：
+\begin{lstlisting}[caption=求组合数]
+// 预处理出组合数数组
+// 时间复杂度 O(n^2)
+for(int i = 1; i <= k; i++) {
+	c[i][0] = c[i][i] = 1;
+	for(int j = 1; j <= i - 1; j++)
+		c[i][j] = c[i - 1][j - 1] + c[i - 1][j];
+}
+\end{lstlisting}
+
+组合数的结果一般较大，若题目要求出 $\mathrm{C^n_m}$ 对一个数 $\mathrm{p}$ 取模后的结果，并且 $\mathrm{1 \sim n}$ 都存在模 $\mathrm{p}$ 乘法逆元，则可以先计算分子 $\mathrm{n! \bmod p}$，再计算分母 $\mathrm{m!(n - m)! \bmod p}$ 的逆元，乘起来得到 $\mathrm{C^n_m \bmod p}$，时间复杂度 $\mathrm{O(n)}$。
+
+若在计算阶乘过程中，把 $\mathrm{0 \le k \le n}$ 的每个 $\mathrm{k! \bmod p}$ 及其逆元分别保存在两个数组 $\mathrm{jc}$ 和 $\mathrm{jc\_inv}$ 中，则可以在 $\mathrm{O(nlogn)}$ 的预处理后，以 $\mathrm{O(1)}$ 的时间计算出 
+
+$$
+\mathrm{C^x_y \bmod p = jc[x] \times jc\_inv[y] \times jc\_inv[x-y] \bmod p}
+$$
+
+若题目要求对 $\mathrm{C^n_m}$ 进行高精度运算，为了避免除法，可以使用阶乘分解的做法，将分子分母快速分解质因数，在数组中保存各项质因子的指数。然后将分子分母各质因子的指数对应相减，最后把剩余质因子乘起来，时间复杂度 $\mathrm{O(nlogn)}$。
+
+
+\subsubsection{二项式定理}
+$$
+\mathrm{(a+b)^n = \sum^n_{k = 0}C^n_ka^kb^{n - k}}
+$$
+
+
+\subsubsection{多重集的排列数与组合数}
+\textbf{多重集的排列数}
+
+设 $\mathrm{S = \left\{n_1a_1, n_2a_2, \cdots, n_ka_k\right\}}$，则 $\mathrm{S}$ 的全排列数为 
+
+$$
+\mathrm{\frac{n!}{n_1!n_2!\cdots n_k!}}
+$$
+
+\textbf{多重集的组合数（$\mathrm{r \le n_i}$）}
+
+设 $\mathrm{S = \left\{ n_1a_1, n_2a_2, \cdots, n_ka_k \right\}}$，设 $\mathrm{r \le n_i \  (\forall \  i \in [1, k])}$。则从 $\mathrm{S}$ 中取出一个 $\mathrm{r}$ 个元素的多重集的组合数
+
+$$
+C^{k + r - 1}_{k - 1}
+$$
+
+
+\textbf{多重集的组合数}
+
+设 $\mathrm{S = \left\{ n_1a_1, n_2a_2, \cdots, n_ka_k \right\}}$，设 $\mathrm{r \le n}$。则从 $\mathrm{S}$ 中取出一个 $\mathrm{r}$ 个元素的多重集的组合数（证明需要容斥原理）
+$$
+\sum_{p=0}^k(-1)^p \sum_A\binom{k+r-1-\sum_A n_{A_i}-p}{k-1}
+$$
+注意当 $n = 1$ 时需要特判，上面的公式并不适用。多重集组合数的代码可以看容斥原理一节。
+
+\subsubsection{Lucas 定理}
+用于对大组合数取模。
+
+\textbf{当 p 是素数时}，有：
+$$
+C_m^n \equiv C_{m\bmod p}^{n\bmod p} * C_{m / p}^{n / p}(\bmod\ p)
+$$
+即把 $\mathrm{n}$ 和 $\mathrm{m}$ 当成 $\mathrm{p}$ 进制数，对 $\mathrm{p}$ 进制下的每一位分别计算组合数，最后再乘起来。
+\begin{lstlisting}[caption=Lucas 定理]
+// p 一定要是质数
+// 为了求解组合数进行预处理
+ll fac[N], inv[N], fac_inv[N];
+void init(int n) {
+    fac[0] = inv[0] = fac_inv[0] = 1;
+    fac[1] = inv[1] = fac_inv[1] = 1;
+    for(int i = 2; i <= n; i++)
+        fac[i] = fac[i - 1] * i % p,
+        inv[i] = (ll)(p - p / i) * inv[p % i] % p,
+        fac_inv[i] = fac_inv[i - 1] * inv[i] % p;
+}
+
+ll c(ll n, ll m) {
+    if(n < m)
+        return 0;
+    return (fac[n] * fac_inv[m]) % p * fac_inv[n - m] % p;
+}
+
+ll lucas(ll n, ll m) {
+	if(!m)
+		return 1;
+	return c(n % p, m % p) * lucas(n / p, m / p) % p;
+}
+
+\end{lstlisting}
+
+
+\subsubsection{扩展 Lucas 定理}
+根据 阶乘取模问题 一节的 Legendre 公式，可以得到 Kummer 定理。
+
+\noindent \textbf{Kummer 定理}
+
+素数 p 在组合数 $\binom{m}{n}$ 中的幂次，恰好是 p 进制下 m 减掉 n 需要借位的次数，亦即：
+$$
+\nu_p\left(\binom{n}{m}\right)=\frac{S_p(m)+S_p(n - m)-S_p(n)}{p-1} .
+$$
+
+其中 $S_p(n)$ 为 p 进制下 n 的各个数位的和。
+
+当组合数对某质数的幂次取模时，有
+$$
+\binom{n}{k}=p^K \frac{(n!)_p}{(k!)_p((n-k)!)_p} .
+$$
+
+可以通过阶乘取模问题一节中的 \textbf{Wilson 定理的推广}来求解。
+
+当模数 $\mathrm{m}$ 是一般的合数时，先进行质因数分解：
+$$
+m=p_1^{\alpha_1} p_2^{\alpha_2} \cdots p_s^{\alpha_s}
+$$
+
+然后，分别计算出模 $p_i^{\alpha_i}$ 下组合数 $\binom{n}{k}$ 的余数，就得到 $s$ 个同余方程：
+
+$$
+\left\{\begin{array}{l}
+\binom{n}{k} \equiv r_1, \quad\left(\bmod p_1^{\alpha_1}\right) \\
+\binom{n}{k} \equiv r_2, \quad\left(\bmod p_2^{\alpha_2}\right) \\
+\cdots \\
+\binom{n}{k} \equiv r_s, \quad\left(\bmod p_s^{\alpha_s}\right)
+\end{array}\right.
+$$
+
+最后，利用 中国剩余定理 求出模 $m$ 的余数。
+
+简单来说，就是：\textbf{Wilson 定理的推广} + \textbf{Kammer 定理} + \textbf{中国剩余定理}。下面给出 P4720 模板题的代码：
+\begin{lstlisting}[caption=扩展 Lucas 定理]
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int N = 1e5 + 5;
+
+ll read() {
+    ll tem;
+    scanf("%lld",&tem);
+    return tem;
+}
+
+int p[N], pa[N], c[N], prime_cnt;
+void divide(int n) {
+    prime_cnt = 0;
+    for(int i = 2; i <= sqrt(n); i++) {
+        if(n % i == 0) {
+            p[++prime_cnt] = i, pa[prime_cnt] = 1, c[prime_cnt] = 0;
+            while(n % i == 0)
+                n /= i, pa[prime_cnt] *= i, c[prime_cnt]++;
+        }
+    }
+
+    if(n > 1)
+        p[++prime_cnt] = n, pa[prime_cnt] = n, c[prime_cnt] = 1;
+}
+
+// a 代表余数，pa 代表模数
+int a[N];
+// 求解 (n!)_p % pa
+int factmod(ll n, int p, int pa) {
+    vector<int> f(pa);
+    f[0] = 1;
+    for(int i = 1; i < pa; i++)
+        f[i] = i % p ? (ll)f[i - 1] * i % pa : f[i - 1];
+    bool neg = p != 2 || pa <= 4;
+    int res = 1;
+    while(n > 1) {
+        if((n / pa) & neg)
+            res = pa - res;
+        res = (ll)res * f[n % pa] % pa;
+        n /= p;
+    }
+    return res;
+}
+
+// 求乘法逆元
+void exgcd(ll a, ll b, int &x, int &y) {
+    if(!b) {
+        x = 1;
+        y = 0;
+        return ;
+    }
+    exgcd(b, a % b, y, x);
+    y -= a / b * x;
+}
+
+// 求 n % p 的逆元
+int inv(int n, int p) {
+    int x, y;
+    exgcd(n, p, x, y);
+    return (x + p) % p;
+}
+
+// 计算 p 进制下 n 的数字和
+int cnt_p(ll n, int p) {
+    int ret = 0;
+    while(n)
+        ret += n % p, n /= p;
+    return ret;
+}
+
+// Kummer 定理求幂次
+int kummer(ll n, ll m, int p) {
+    return cnt_p(m, p) + cnt_p(n - m, p) - cnt_p(n, p);
+}
+
+ll quickPow(ll a, int b, int c) {
+    ll ret = 1;
+    while(b) {
+        if(b & 1)
+            ret = ret * a % c;
+        a = a * a % c;
+        b >>= 1;
+    }
+    return ret;
+}
+
+// 计算组合数比上第 i 个模数的余数
+void calc_a(int i, ll n, ll m) {
+    int num1 = factmod(n, p[i], pa[i]);
+    int num2 = factmod(m, p[i], pa[i]);
+    int num3 = factmod(n - m, p[i], pa[i]);
+    int inv2 = inv(num2, pa[i]), inv3 = inv(num3, pa[i]);
+    int tem = kummer(n, m, p[i]) / (p[i] - 1);
+    if(tem >= c[i])
+        a[i] = 0;
+    else
+        a[i] = quickPow(p[i], tem, pa[i]) * num1 * inv2 * inv3 % pa[i];
+}
+
+int intChina(int r) {
+    ll Mi, d, ans = 0;
+    int x0, y0;
+    ll M = 1;
+    for(int i = 1; i <= r; i++)
+        M *= pa[i];
+    for(int i = 1; i <= r; i++) {
+        Mi = M / pa[i];
+        exgcd(Mi, pa[i], x0, y0);
+        ans = (ans + Mi * x0 * a[i]) % M;
+    }
+    return (ans + M) % M;
+}
+
+int main() {
+    ll n = read(), m = read(), p = read();
+    divide(p);
+    for(int i = 1; i <= prime_cnt; i++)
+        calc_a(i, n, m);
+    printf("%d", intChina(prime_cnt));
+    return 0;
+}
+\end{lstlisting}
+
+
+\subsubsection{容斥原理}
+\noindent \textbf{集合的并 = 集合交的交错和}
+$$
+\left|\bigcup_{i=1}^n S_i\right|=\sum_{m=1}^n(-1)^{m-1} \sum_{a_i<a_{i+1}}\left|\bigcap_{i=1}^m S_{a_i}\right|
+$$
+在实际编写代码时，通常需要枚举状态。以求解多重集的组合数为例，给出模板题的代码：
+\begin{lstlisting}[caption=容斥原理示例 - 多重集组合数]
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int N = 1e5 + 5;
+const int MOD = 1e9 + 7;
+
+ll read() {
+    ll tem;
+    scanf("%lld",&tem);
+    return tem;
+}
+
+ll f[25];
+
+int popcount(int i) {
+    int ret = 0;
+    while(i) {
+        if(i & 1)
+            ret++;
+        i >>= 1;
+    }
+    return ret;
+}
+
+ll inv[25], fac_inv[25];
+void init(int n) {
+    inv[0] = fac_inv[0] = 1;
+    inv[1] = fac_inv[1] = 1;
+    int p = MOD;
+    for(int i = 2; i <= n; i++) {
+        inv[i] = (ll)(p - p / i) * inv[p % i] % p;
+        fac_inv[i] = fac_inv[i - 1] * inv[i] % p;
+    }
+}
+
+ll c(ll n, ll m) {
+    if(n < m)
+        return 0;
+    ll tem = 1;
+    for(int i = 0; i < m; i++)
+        tem = tem * (n - i) % MOD;
+    tem = tem * fac_inv[m] % MOD;
+    return tem;
+}
+
+ll lucas(ll n, ll m) {
+    if(!m)
+        return 1;
+    int p = MOD;
+    return c(n % p, m % p) * lucas(n / p, m / p) % p;
+}
+
+int main() {
+    ll n = read(), s = read();
+    init(n);
+    for(int i = 1; i <= n; i++)
+        f[i] = read();
+    if(n == 1) 
+        return printf("%lld", f[1] >= s ? 1 : 0), 0;
+    ll ans = 0;
+    for(int i = 0; i < (1 << n); i++) {
+        int tem = popcount(i);
+        int mi = tem % 2 ? -1 : 1;
+        int r = i, cnt = 0;
+        ll top = n + s - 1 - tem;
+        while(r) {
+            cnt++;
+            if(r & 1)
+                top -= f[cnt];
+            r >>= 1;
+        }
+        ans = (ans + mi * lucas(top, n - 1)) % MOD;
+    }
+    ans = (ans + MOD) % MOD;
+    printf("%lld", ans);
+    return 0;
+}
+\end{lstlisting}
+
+
+
+\subsubsection{Catalan 数}
+Catalan 数应用的特征：一种操作数不能超过另外一种操作数，或者两种操作不能有交集，这些操作的合法方案数，通常是 Catalan 数（1、1、2、5、14、42、132、429、1430、$\cdots$）。
+
+\noindent \textbf{关于 Catalan 数的常见公式：}
+
+$$
+H_n=\frac{\binom{2 n}{n}}{n+1}\left(n \geq 2, n \in \mathbf{N}_{+}\right)
+$$
+$$
+\begin{gathered}
+H_n= \begin{cases}\sum_{i=1}^n H_{i-1} H_{n-i} & n \geq 2, n \in \mathrm{~N}_{+} \\
+1 & n=0,1\end{cases} \\
+H_n=\frac{H_{n-1}(4 n-2)}{n+1} \\
+H_n=\binom{2 n}{n}-\binom{2 n}{n-1}
+\end{gathered}
+$$
+
+\noindent \textbf{下面这些问题的解都是 Catalan 数}
+\begin{enumerate}
+	\item 有一个大小为 $n\times n$ 的方格图左下角为 (0, 0) 右上角为 (n, n)，从左下角开始每次都只能向右或者向上走一单位，不走到对角线 $y=x$ 上方（但可以触碰）的情况下到达右上角有多少可能的路径？
+	\item 在圆上选择 2n 个点，将这些点成对连接起来使得所得到的 n 条线段不相交的方法数？
+	\item 由 n 个 +1 和 n 个 -1 组成的 2n 个数 $a_1,a_2, \cdots ,a_{2n}$，其部分和满足 $a_1+a_2+ \cdots +a_k \geq 0~(k=1,2,3, \cdots ,2n)$，有多少个满足条件的数列？
+	\item 包括 $n$ 组括号的合法运算式的个数有多少？
+	\item n 个结点可构造多少个不同的二叉树？
+	\item 通过连接顶点而将 n + 2 边的凸多边形分成 n 个三角形的方法数？
+	\item 一个栈（无穷大）的进栈序列为 $1,2,3, \cdots ,n$ 有多少个不同的出栈序列？
+\end{enumerate}
+
+\noindent \textbf{路径计数问题}
+\begin{enumerate}
+	\item 从 $(0,0)$ 到 $(m,n)$ 的非降路径数： $\binom{n + m}{m}$.
+	\item 从 $(0,0)$ 到 $(n,n)$ 的除端点外不接触直线 $y = x$ 的非降路径数：$2 \binom{2n - 2}{n - 1} - 2 \binom{2n - 2}{n}$.
+	\item 从 $(0,0)$ 到 $(n,n)$ 的除端点外不穿过直线 $y = x$ 的非降路径数：$\frac{2}{2n + 1} \binom{2n}{n}$.（即 $2H_n$）
+\end{enumerate}
+
+\begin{lstlisting}[caption=卡特兰数]
+ll cat[25];
+void catalan_init(int n) {
+    cat[0] = 1;
+    for (int i = 1; i <= n; i++)
+        cat[i] = cat[i - 1] * (4 * i - 2) / (i + 1);
+    return ;
+}
+\end{lstlisting}
+
+
+
+\end{document}

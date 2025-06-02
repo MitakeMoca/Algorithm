@@ -13,7 +13,7 @@ int a[N], f[N][30], n;
 
 void ST_init() {
     for(int i = 1; i <= n; i++)
-        f[i][0] = a[0];
+        f[i][0] = a[i];
     int t = log(n) / log(2) + 1;
     for(int j = 1; j < t; j++)
         for(int i = 1; i <= n - (1 << j) + 1; i++)
