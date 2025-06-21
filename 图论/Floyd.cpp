@@ -1,14 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void Floyd();
-
-int main()
-{
-	Floyd();
-	return 0;
-}
-
 void Floyd()
 {
 	int n, m;
@@ -34,8 +26,16 @@ void Floyd()
 
 	for(int i = 1; i <= n; i++){
 		for(int j = 1; j <= n; j++){
-			cout << G[i][j] << ' ';
+			cout << G[i][j] << " \n"[j == n];
 		}
-		puts("");
 	}
+}
+
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	
+	Floyd();
+	return 0;
 }
