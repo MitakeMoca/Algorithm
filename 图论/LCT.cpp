@@ -153,6 +153,8 @@ int main()
 			tr[x].w = y;
 			splay(x);
 			break;
+		default:
+			break;
 		}
 	}
 	return 0;
