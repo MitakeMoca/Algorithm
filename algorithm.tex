@@ -485,6 +485,45 @@ void times(int n) {
 }
 \end{lstlisting}
 
+
+\subsubsection{整除分块}
+解决诸如求 $\sum_{i=1}^nf(i)\lfloor \frac{n}{i} \rfloor$ 一类的问题；首先对于 $\lfloor \frac{n}{i} \rfloor$ 有两条性质：
+
+\textbf{性质 1：} 分块的块数 $\le 2\lfloor \sqrt{n} \rfloor$
+
+\textbf{性质 2：}$i$ 所在块的右端点为 $\lfloor \frac{n}{\lfloor \frac{n}{i} \rfloor} \rfloor$
+
+所以可以先预处理出 $f(i)$ 的前缀和 $s(i) = \sum^i_{j=1} f(j)$，再枚举每一个块 $[l, r]$，累加每块的贡献，时间复杂度 $O(\sqrt{n})$。
+\begin{lstlisting}[caption=整除分块]
+int div_block(int n) {
+	int r = 0, ret = 0;
+	for(int l = 1; l <= n; l = r + 1) {
+		if(n / l == 0)
+			break;
+		r = n / (n / l);
+		ret += (s[r] - s[l - 1]) * (n / l);
+	}
+	return ret;
+}
+\end{lstlisting}
+
+也可以向二维扩展，求 $\sum_{i=1}^{min(n, m)}f(i) \lfloor \frac{n}{i} \rfloor \lfloor \frac{m}{i} \rfloor$，时间复杂度 $O(\sqrt{n} + \sqrt{m})$。
+\begin{lstlisting}[caption=整数分块二维扩展]
+int div_block(int n, int m) {
+	int r = 0, ret = 0;
+	int bound = min(n, m);
+	for(int l = 1; l <= bound; l = r + 1) {
+		if(n / l == 0)
+			break;
+		// 求两个块的公共区间
+		r = min(n / (n / l), m / (m / l));
+		ret += (s[r] - s[l - 1]) * (n / l) * (m / l);
+	}
+	return ret;
+}
+\end{lstlisting}
+
+
 \subsubsection{欧几里得算法求 gcd}
 时间复杂度 $\mathrm{log(a + b)}$。当需要做高精度运算时，建议使用更相减损术代替。
 \begin{lstlisting}[caption=欧几里得算法求 gcd]
@@ -1440,6 +1479,40 @@ int main() {
 \end{lstlisting}
 
 
+\subsubsection{Mobius 函数}
+$$
+\mu(N)=\left\{\begin{array}{cc}
+0 & \exists i \in[1, m], c_i>1 \\
+1 & m \equiv 0(\bmod 2), \forall i \in[1, m], c_i=1 \\
+-1 & m \equiv 1(\bmod 2), \forall i \in[1, m], c_i=1
+\end{array}\right.
+$$
+若只求一项的 Mobius 函数，可以利用分解质因数计算；如果想要求 $1 \sim N$ 每一项的 Mobius 函数，可以利用埃氏筛计算：
+\begin{lstlisting}[caption=利用埃氏筛计算 $1 \sim N$ 的 Mobius 函数]
+int miu[N], v[N];
+void Mobius_func(int n) {
+	for(int i = 1; i <= n; i++)
+		miu[i] = 1, v[i] = 0;
+	for(int i = 2; i <= n; i++) {
+		if(v[i])
+			continue;
+		miu[i] = -1;
+		for(int j = 2 * i; j <= n; j += i) {
+			v[j] = 1;
+			if((j / i) % i == 0)
+				miu[j] = 0;
+			else
+				miu[j] *= -1;
+		}
+	}
+}
+\end{lstlisting}
+
+Mobius 函数的一个简单应用是可以用来求满足 $\mathrm{1 \le x \le a}$、$\mathrm{1 \le y \le b}$ 的且互质的 $\mathrm{(x, y)}$ 的对数。假设用 $\mathrm{F[a, b]}$ 表示满足 $\mathrm{1 \le x \le a}$、$\mathrm{1 \le y \le b}$ 的且互质的 $\mathrm{(x, y)}$ 的对数；用 $\mathrm{D[a, b, k]}$ 表示满足 $\mathrm{1 \le x \le a}$、$\mathrm{1 \le y \le b}$ 且 $k \mid gcd(x, y)$ 的 $\mathrm{(x, y)}$ 的对数。那么有：
+$$
+F[a, b] = \sum_{i = 1}^{min(a, b)} \mu(i) \times D[a, b, i]
+$$
+
 
 \subsubsection{Catalan 数}
 Catalan 数应用的特征：一种操作数不能超过另外一种操作数，或者两种操作不能有交集，这些操作的合法方案数，通常是 Catalan 数（1、1、2、5、14、42、132、429、1430、$\cdots$）。
@@ -1485,6 +1558,979 @@ void catalan_init(int n) {
     return ;
 }
 \end{lstlisting}
+
+
+\subsection{博弈论}
+\subsubsection{Nim 游戏}
+地上有 $n$ 堆石子，每人每次可从任意一堆石子里取出任意多枚石子扔掉，可以取完，不能不取。每次只能从一堆里取。最后没石子可取的人就输了。问是否存在先手必胜的策略。
+
+Nim 博弈先手必胜，当且仅当 $\mathrm{A_1\ xor\ A_2\ xor \cdots\ xor\ A_n \neq 0}$。
+
+
+\subsubsection{公平组合游戏 ICG}
+若一个游戏满足：
+\begin{itemize}
+\item 由两名玩家交替行动
+\item 在游戏进程的任意时刻，可以执行的合法行动与轮到哪名玩家无关
+\item 不能行动的玩家判负
+\end{itemize}
+则称该游戏是一个公平组合游戏。Nim 游戏是公平组合游戏，但常见的棋类游戏，比如围棋，就不是公平组合游戏，因为不满足条件 2 和 3。
+
+
+\subsubsection{有向图游戏}
+给定一个 DAG，图中有一个唯一的起点，在起点上放有一个棋子。两名玩家交替把棋子沿有向边进行移动，每次可以移动一步，无法移动者判负。该游戏被称为有向图游戏。任何一个 ICG 都能转化为有向图游戏。
+
+
+\subsubsection{SG 函数}
+在有向图游戏中，对于每个节点 $x$，设从 $x$ 出发共有 $k$ 条有向边，分别到达结点 $y_1, y_2, \cdots, y_k$，定义 SG(x) 为 $x$ 的后继结点的 SG 函数值构成的集合再执行 mex 运算，即 
+$$
+SG(x) = mex({SG(y_1), SG(y_2), \cdots, SG(y_k)})
+$$
+
+特别地，整个有向图游戏 G 的 SG 函数值被定义为起点 s 的 SG 函数值，即 SG(G) = SG(s)。
+
+
+\subsubsection{有向图游戏的和}
+设 $G_1, G_2, \cdots, G_m$ 是 $m$ 个有向图游戏。定义有向图游戏 G，它的行动规则是任选某个有向图游戏 $G_i$，并在 $G_i$ 上行动一步，则 $G$ 称为有向图游戏 $G_1, G_2, \cdots, G_m$ 的和，它的 SG 函数为：
+$$
+SG(G) = mex({SG(G_1), SG(G_2), \cdots, SG(G_m)})
+$$
+
+\textbf{有向图游戏的某个局面必胜，当且仅当该局面对应结点的 SG 函数值大于 0}。
+
+\textbf{有向图游戏的某个局面必败，当且仅当该局面对应结点的 SG 函数值等于 0}。
+
+
+\subsubsection{操作出某个状态取胜的博弈游戏}
+如果题目中给出获胜条件是操作出某个状态，那么我们就不能直接应用有向图游戏，因为有向图游戏要求“不能操作者失败”。我们可以进行一个转换，往前推直到推出必败态作为有向图游戏的终点。然后就可以继续利用 SG 理论了。同时，这个必败态一般还不会直接是获胜条件，而是沿着这个状态走下去，一定能导致对方获胜的状态；也就是说，走下去一定失败，但是实际上并没有走下去。
+
+
+\newpage
+\section{字符串}
+
+\subsection{KMP}
+给定一个模式串 $\mathrm{P}$ 和主串 $\mathrm{S}$，求模式串在主串中出现的位置（字符串下标均从 1 开始）：
+
+\begin{enumerate}
+	\item 用双指针表示 $\mathrm{S[i-j+1\cdots i]}$ 与 $\mathrm{P[1 \cdots j]}$ 完全相等。$\mathrm{i}$ 是不断增加的，$\mathrm{j}$ 相应地变化，且始终满足前面的关系
+	\item 当 $\mathrm{S[i+1] = P[j+1]}$ 时，$\mathrm{i}$ 与 $\mathrm{j}$ 各加 1
+	\item 当 $\mathrm{j=m}$ 时，发现 $\mathrm{P}$ 是 $\mathrm{S}$ 的子串，并输出相应位置
+	\item 当 $\mathrm{S[i + 1] \neq P[j+1]}$ 时，减小 $\mathrm{j}$ 值，使得新的 $\mathrm{j}$ 值仍使关系得到满足。调整 $\mathrm{j}$ 值到多少呢？不难发现可以维护一个数组 $\mathrm{next[i]}$，用来存储模式串 $\mathrm{P[1 \cdots i]}$ 中相等真前后缀的最长长度
+\end{enumerate}
+
+\begin{lstlisting}[caption=KMP]
+// KMP（双指针）
+
+// nxt 数组，以及字符串都从 1 开始
+// 求 next 数组
+void pre() {
+	nxt[1] = 0;
+	int j = 0;
+	for(int i = 1; i < m ;i++) {
+		while(j > 0 && P[j + 1] != P[i + 1])
+			j = nxt[j];
+		if(P[j + 1] == P[i + 1])
+			j++;
+		nxt[i + 1] = j; 
+	}
+}
+
+// S 是主串，P 是模式串
+void kmp() {
+	int j = 0;
+	for(int i = 0; i < n ;i++) {
+		while(j > 0 && P[j + 1] != S[i + 1])
+			j = nxt[j];
+		if(P[j + 1] == S[i + 1])
+			j++;
+		if(j == m)
+			printf("%d ", i + 1 - m + 1), j = nxt[j];
+	}
+}
+\end{lstlisting}
+
+
+\subsubsection{Power Strings 问题}
+求一个字符串由多少个重复的子串连接而成。
+
+如果 $\mathrm{n \bmod (n - next[n]) = 0}$  ，那么答案就是 $\mathrm{n / (n - next[n])}$，否则答案就是 1。
+
+\subsubsection{非严格 Power Strings}
+比如 abcabcab 的最小循环串是 abc，长度为 $\mathrm{3}$
+
+最小循环串长度：$\mathrm{n-next[n]}$
+
+
+
+\subsection{字符串哈希}
+对字符串 $\text{C} = \text{c}_1\text{c} _2\cdots \text{c}_m$，定义 Hash 函数
+
+$$
+\mathrm{H(c) = (c_1b^{m-1}+c_2b^{m-2}+\cdots+c_mb^0) \bmod h} 
+$$
+
+设 $\mathrm{H(c, k)}$ 为对前 $\mathrm{k}$ 个字符串求 Hash 值，则有
+
+$$
+\mathrm{H(c, k+1) = b \times H(c, k) + c_{k + 1}}
+$$
+
+求子串的 Hash 值，对于字符串 $\text{C} = \text{c}_1\text{c} _2\cdots \text{c}_m$ 从位置 $\mathrm{k+1}$ 开始的长度为 $\mathrm{n}$ 的子串 $\mathrm{C' = c_{k+1}c_{k+2} \cdots c_{k+n} }$ ，有
+
+$$
+\mathrm{H(c') = H(c, k + n) - H(c, k) \times b^n}
+$$
+
+\noindent \textbf{哈希冲突的问题}
+
+\begin{enumerate}
+	\item 一般可以取 $\mathrm{h = 2 ^ {32}}$ 或 $\mathrm{h = 2^{64}}$，利用 unsigned int 或者 unsigned long long 自然溢出计算 Hash 值
+	\item 为了保险起见，可以采取双哈希策略
+	\item $\mathrm{b}$ 常定义为 131 或 13331
+\end{enumerate}
+
+\begin{lstlisting}[caption=字符串哈希]
+typedef unsigned long long ull;
+const int P = 131;
+// 字符串和 h 数组都从 1 开始
+ull p[maxn], h[maxn];
+
+// 预处理 hash 函数的前缀和
+void init() {
+	p[0] = 1, h[0] = 0;
+	for(int i = 1; i <= n; i++) {
+		p[i] = p[i - 1] * P;
+		h[i] = h[i - 1] * P + s[i]; 
+	}
+}
+
+// 计算 s[l ~ r] 的 hash 值
+ull get(int l, int r) {
+	return h[r] - h[l - 1] * p[r - l + 1];
+}
+\end{lstlisting}
+
+
+
+\subsection{Trie}
+树的每条边恰好对应一个字符，每条根到顶点的路径对应了一个字符串。利用了串的公共前缀，节约了存储空间。
+
+基本操作：初始化、插入、删除
+
+\begin{lstlisting}[caption=Trie]
+// 初始化
+int trie[maxn][26], tot = 1;
+
+// 插入字符串
+void insert(char *str) {
+	int len = strlen(str), p = 1;
+	for(int k = 0; k < len; k++) {
+		int ch = str[k] - 'a';
+		if(trie[p][ch] == 0)
+			trie[p][ch] = ++tot;
+		p = trie[p][ch];
+	}
+	end[p] = true;
+}
+
+// 检索字符串
+bool search(char *str) {
+	int len = strlen(str), p = 1;
+	for(int k = 0; k < len; k++) {
+		p = trie[p][str[k] - 'a'];
+		if(p == 0)
+			return false;
+	}
+	return end[p];
+}
+\end{lstlisting}
+
+\subsubsection{最大异或对问题}
+从 $\mathrm{n}$ 个数中挑两个，让他们的异或和最大。
+
+每一步都尝试沿着与当前位相反的字符指针向下访问（如果为空节点就只能访问相同的）。
+
+
+
+\subsection{AC 自动机}
+与 KMP 算法类似，AC 自动机也用来处理字符串匹配问题。不过 KMP 用来处理单模式串的问题，而 AC 自动机用来处理多模式串的问题。AC 自动机建立在 KMP 算法和 Trie 树的基础上。
+
+构建一个 AC 自动机用于模式匹配需要三步：
+
+\begin{enumerate}
+	\item 用所有模式串构建 Trie 树
+	\item 在 Trie 上建立 \textbf{回跳边} 和 \textbf{转移边} 两类边（Trie 树中的树边算一种特殊的转移边，不需要经过回跳转移）
+	\item 扫描主串进行匹配
+\end{enumerate}
+
+建 Trie 没什么好说的，主要看第二步里的建立回跳边和转移边。
+
+回跳边的作用是，在匹配失败时的跳转路径，回跳边的所指结点就是当前结点的最长后缀。回跳边的构建方式是：\textbf{回跳边指向父节点的回跳边所指结点的儿子}（根节点、第一层结点的回跳边都指向根节点）。
+
+转移边表示匹配过程中的跳转路径。转移边所指结点就是当前结点的最短路（即距离当前结点最近的还能继续匹配新字符串的地方）。转移边的构建方式是：\textbf{转移边指向当前结点的回跳边所指结点的儿子}。
+
+综上，利用 BFS 建立 AC 自动机的过程就是：
+
+\begin{enumerate}
+	\item 初始化，把根节点的儿子们入队
+	\item 只要队不空，节点 u 出队
+	\item 枚举 u 的 26 个儿子，若儿子存在（有树边），则爹帮儿子建立回跳边，并把儿子入队；若儿子不存在，则爹自建转移边。
+\end{enumerate}
+
+利用 AC 自动机查找单词的出现次数，需要扫描主串，依次取出字符 $\mathrm{s[k]}$。一边走串，一边把当前串的所有后缀串搜索出来。
+
+\begin{enumerate}
+	\item i 指针走主串对应的结点，沿着树边或转移边走，保证不回退。												
+	\item j 指针沿着回跳边搜索模式串，每次从当前结点走到根节点，把当前结点中的所有后缀模式串一网打尽，保证不遗漏。
+	\item 扫描完主串，返回答案。
+\end{enumerate}
+
+\begin{lstlisting}[caption=AC 自动机]
+// 求有多少个模式串在主串里出现过
+int trie[maxn][26], tot = 0, cnt[maxn], nxt[maxn];
+
+// 插入字符串，用来建立初始字典树
+void insert(char *str) {
+	int len = strlen(str), p = 0;
+	for(int k = 0; k < len; k++) {
+		int ch = str[k] - 'a';
+		if(trie[p][ch] == 0)
+			trie[p][ch] = ++tot;
+		p = trie[p][ch];
+	}
+	cnt[p]++;
+}
+
+// 建立 AC 自动机
+// 时间复杂度 O(26 |S|)
+void build() {
+    queue<int> q;
+    for(int i = 0; i < 26; i++)
+        if(trie[0][i])
+            q.push(trie[0][i]);
+    
+    while(q.size()) {
+        int u = q.front();
+        q.pop();
+        for(int i = 0; i < 26; i++) {
+            int v = trie[u][i];
+            if(v)
+                nxt[v] = trie[nxt[u]][i], q.push(v);
+            else
+                trie[u][i] = trie[nxt[u]][i];
+        }
+    }
+}
+
+// 查找有多少模式串在主串里出现过
+// 时间复杂度 O(n)
+int query(char *s) {
+    int ans = 0;
+    for(int k = 0, i = 0; s[k]; k++) {
+        i = trie[i][s[k] - 'a'];
+        for(int j = i; j && ~cnt[j]; j = nxt[j])
+            ans += cnt[j], cnt[j] = -1;
+    }
+    return ans;
+}
+\end{lstlisting}
+
+
+
+\subsubsection{AC 自动机的拓扑排序优化}
+在我们上面的实现里，每次匹配，会一直向回跳边走来找到所有的匹配，但是这样的效率其实很低。
+
+我们可以利用回跳边的一个性质：在一个 AC 自动机中，如果只保留前向边，那么剩下的图一定是一棵树（每个节点有唯一前驱，也就是前向边指向的结点）。这样 AC 自动机的匹配就可以转化为前向树上的链求和问题，只需要优化这一部分就可以了。
+
+时间主要浪费在每次都要跳前向边，如果我们可以预先记录，最后一并求和，那么效率就会优化。于是我们可以在前向树上，做一次拓扑排序，一次性求出每个模式串的出现次数。具体地说，在建立 AC 自动机的过程中，求每个节点在前向树中的入度（注意前向树中的边由孩子指向父亲）；然后在查询的时候，就可以只为被找到的结点的 $\mathrm{vis}$ 加上 1；最后再利用拓扑排序，结合 $\mathrm{vis}$ 数组求出答案。
+
+\begin{lstlisting}[caption=AC 自动机的拓扑排序优化]
+// idx 记录了每个树上点对应的字符串编号
+// 这种出现几次的问题不需要 cnt
+// 因为某一串可能在另一串的中间出现（如 aa 和 baaaa）
+int trie[maxn][26], tot = 0, idx[maxn], nxt[maxn];
+
+// 插入字符串
+void insert(char *str, int i) {
+	int len = strlen(str), p = 0;
+	for(int k = 0; k < len; k++) {
+		int ch = str[k] - 'a';
+		if(trie[p][ch] == 0)
+			trie[p][ch] = ++tot;
+		p = trie[p][ch];
+	}
+	idx[p] = i;
+}
+
+// 维护每个树上结点的入度
+int degree[maxn];
+// 建立 AC 自动机
+void build() {
+    queue<int> q;
+    for(int i = 0; i < 26; i++)
+        if(trie[0][i])
+            q.push(trie[0][i]);
+    
+    while(q.size()) {
+        int u = q.front();
+        q.pop();
+        for(int i = 0; i < 26; i++) {
+            int v = trie[u][i];
+            if(v) {
+                nxt[v] = trie[nxt[u]][i];
+                degree[trie[nxt[u]][i]]++;
+                q.push(v);
+            }
+            else
+                trie[u][i] = trie[nxt[u]][i];
+        }
+    }
+}
+
+// 统计每个结点的直接出现次数
+int vis[maxn];
+void query(char *s) {
+    for(int k = 0, i = 0; s[k]; k++) {
+        i = trie[i][s[k] - 'a'];
+        vis[i]++;
+    }
+}
+
+// 统计最后每个单词的出现次数
+int ans[maxn];
+void topo() {
+    queue<int> q;
+    for(int i = 0; i <= tot; i++)
+        if(degree[i] == 0)
+            q.push(i);
+    
+    while(!q.empty()) {
+        int u = q.front();
+        q.pop();
+        ans[idx[u]] = vis[u];
+        int v = nxt[u];
+        vis[v] += vis[u];
+        degree[v]--;
+        if(degree[v] == 0)
+            q.push(v);
+    }
+}
+\end{lstlisting}
+
+
+\subsubsection{最短母串问题}
+找一个字符串，包含所有模式串，同时字典序最小，长度最短。
+
+在 AC 自动机的 Trie 树里，每个节点表示一个字符串，但是这个字符串与根如何走到它无关，仅仅与它在树中的位置有关。如果我们考虑根经过何种路径最后走到某节点，那么每往下扩展一层，就相当于向后面增加一个字符。就相当于利用广搜，直到遇到第一个包含了所有模式串的字符串为止（在往下扩展时，按照字典序枚举字符，保证了最后字符串是字典序最小的）。那么如何判断某个字符串是否包含所有模式串呢？可以利用状压的思想，给每个节点增加一个状态位，表示仅仅考虑位置而言这个结点包含了哪几个字符串，bfs 时每扩展一个新的节点就或上这个状态值。
+
+\begin{lstlisting}[caption=最短母串问题]
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int maxn = 605;
+const int maxm = (1 << 12) + 5;
+
+int read() {
+    int tem;
+    scanf("%d",&tem);
+    return tem;
+}
+
+// sta 用于状压
+int trie[maxn][26], tot, sta[maxn], nxt[maxn];
+
+// 给每个节点打上初始标记
+void insert(char *str, int i) {
+    int len = strlen(str), p = 0;
+    for(int k = 0; k < len; k++) {
+        int ch = str[k] - 'A';
+        if(trie[p][ch] == 0)
+            trie[p][ch] = ++tot;
+        p = trie[p][ch];
+    }
+    sta[p] |= 1 << i;
+}
+
+// build 之后，每个节点上的 sta 都被维护好了
+void build() {
+    queue<int> q;
+    for(int i = 0; i < 26; i++)
+        if(trie[0][i])
+            q.push(trie[0][i]);
+    
+    // 因为 bfs 是按层进行遍历的
+    // 所以维护该层的时候前几层的 sta 值一定维护完了
+    while(q.size()) {
+        int u = q.front();
+        q.pop();
+        for(int i = 0; i < 26; i++) {
+            int v = trie[u][i];
+            if(v) {
+                nxt[v] = trie[nxt[u]][i];
+                sta[v] |= sta[trie[nxt[u]][i]];
+                q.push(v);
+            } else
+                trie[u][i] = trie[nxt[u]][i];
+        }
+    }
+}
+
+bool vis[maxn][maxm];
+int n, pre[maxn * maxm];
+char str[15][55], w[maxn * maxm];
+// 这里利用了一个巧妙的思想，同步父亲编号和孩子编号
+void bfs() {
+    queue<int> qnode, qsta;
+    int cnt = 0, cnt_vis = 0;
+    qnode.push(0), qsta.push(0);
+    vis[0][0] = 1;
+    while(qnode.size()) {
+        int node = qnode.front();
+		int st = qsta.front();
+		qnode.pop(), qsta.pop();
+
+        // 这个就是答案
+        if(st == (1 << n) - 1) {
+            vector<int> ans;
+            while (cnt_vis) {
+				ans.push_back(w[cnt_vis]);	
+				cnt_vis = pre[cnt_vis];		
+			}
+			reverse(ans.begin(), ans.end());
+            for(auto it : ans)
+                putchar(it);
+            return ;
+        }
+
+        // 依次遍历孩子，进行转移
+        for(int i = 0; i < 26; i++) {
+            if(!vis[trie[node][i]][st | sta[trie[node][i]]]) {
+                vis[trie[node][i]][st | sta[trie[node][i]]] = true;
+                qnode.push(trie[node][i]);
+                qsta.push(st | sta[trie[node][i]]);
+                
+                cnt++;
+                w[cnt] = i + 'A';
+                pre[cnt] = cnt_vis;
+            }
+        }
+
+        cnt_vis++;
+    }
+}
+
+int main() {
+    n = read();
+    for(int i = 0; i < n; i++) {
+        scanf("%s", str[i]);
+        insert(str[i], i);
+    }
+    build();
+    bfs();
+    return 0;
+}
+\end{lstlisting}
+
+
+
+\newpage
+\section{动态规划}
+
+\subsection{背包}
+\subsubsection{0-1 背包}
+\begin{lstlisting}[caption=0-1 背包滚动优化写法]
+for(int i = 1; i <= n ; i++)
+	for(int j = m; j >= v[i]; j--)
+		f[j] = max(f[j], f[j - v[i]] + w[i]);
+\end{lstlisting}
+
+
+\subsubsection{完全背包}
+\begin{lstlisting}[caption=完全背包]
+for(int i = 1; i <= n; i++)
+	for(int j = v[i]; j <= m; j++)
+		f[j] = max(f[j], f[j - v[i]] + w[i]);
+\end{lstlisting}
+
+
+\subsubsection{多重背包}
+最朴素的想法：都拆成一个物体，转化成 01 背包：
+\begin{lstlisting}[caption=多重背包朴素写法]
+for(int i = 1; i <= n; i++)
+	for(int j = m; j >= 0; j--)
+		for(int k = 1; k <= s[i] && k * v[i] <= j; k++)
+			f[j] = max(f[j], f[j - k * v[i]] + k * w[i]);
+\end{lstlisting}
+
+\noindent \textbf{二进制优化：}
+\begin{lstlisting}[caption=多重背包二进制优化]
+for(int i = 1; i <= n; i++) {
+	for(int k = 1; k <= s[i]; k *= 2)
+		s[i] -= k, goods.push_back({v[i] * k, w[i] * k});
+	if(s[i] > 0)
+		goods.push_back({v * s[i], w * s[i]});
+}
+
+// 然后当成 01 背包
+for(auto good : goods) 
+	for(int j = m; j >= good.v ; j--)
+		f[j] = max(f[j], f[j - good.v] + good.w);
+\end{lstlisting}
+
+\noindent \textbf{单调队列优化：}
+
+$\mathrm{f}$ 数组是按照类更新的，可以把 $\mathrm{f[1 \cdots m]}$ 按体积 $\mathrm{v}$ 的余数拆分成 $\mathrm{v}$ 个类：
+
+\begin{itemize}
+	\item $\mathrm{f[0], f[v], f[2v], \cdots, f[kv]}$
+	\item $\mathrm{f[1], f[1 + v], f[1 + 2v], \cdots, f[1 + kv]}$
+	\item $\mathrm{f[2], f[2 + v], f[2 + 2v], \cdots, f[2 + kv]}$
+	\item $\mathrm{\cdots}$
+	\item $\mathrm{f[j], f[j + v], f[j + 2v], \cdots, f[j + kv]}$
+\end{itemize}
+
+$\mathrm{f[j]}$ 是由前面不超过 $\mathrm{s}$ 个的同类值递推得到的，相当于从前面宽度为 $\mathrm{s}$ 的窗口中挑选最大值来更新当前值，所以选择用单调队列维护窗口最大值。
+
+但是这还需要顺序更新 $\mathrm{f}$ 值，可以增加一个备份数组 $\mathrm{g}$。
+\begin{lstlisting}[caption=多重背包单调队列优化]
+for(int i = 1; i <= n; i++) {
+	memcpy(g, f, sizeof(f));
+	// 拆分为 v 类
+	for(int j = 0; j < v[i]; j++) {
+		int h = 0, t = -1;
+		// 对每一类用单调队列
+		for(int k = j; k <= m; k += v[i]) {
+			// q[h] 不在窗口 [k - s * v, k - v] 中，队头出队
+			if(h <= t && q[h] < k - s * v[i])
+				h++;
+			// 使用队头最大值更新 f
+			if(h <= t)
+				f[k] = max(g[k], g[q[h]] + (k - q[h]) / v[i] * w[i]);
+			// 当前值比队尾更有价值，队尾出队
+			while(h <= t && g[k] >= g[q[t]] + (k - q[t]) / v[i] * w[i])
+				t--;
+			// 下标入队，便于队头出队
+			q[++t] = k;
+		}
+	}
+}
+\end{lstlisting}
+
+
+\subsubsection{混合背包}
+01 背包 + 完全背包 + 多重背包。先把多重背包，进行二进制优化，转化为 01 背包：
+\begin{lstlisting}[caption=混合背包]
+for(auto thing : things) {
+	if(01 背包)
+		for(int j = m; j >= thing.v; j--)
+			f[j] = max(f[j], f[j - thing.v] + thing.w);
+	else if(完全背包)
+		for(int j = thing.v; j <= m; j++)
+			f[j] = max(f[j], f[j - thing.v] + thing.w);
+}
+\end{lstlisting}
+
+
+\subsubsection{分组背包}
+一个组里最多选一个物品。
+\begin{lstlisting}[caption=分组背包]
+for(int i = 1; i <= n; i++)
+	for(int j = m; j >= 0; j--)
+		for(int k = 0; k < s[i]; k++)
+			if(j >= v[i][k])
+				f[j] = max(f[j], f[j - v[i][k]] + w[i][k]);
+\end{lstlisting}
+
+
+\subsubsection{二维费用背包}
+\begin{lstlisting}[caption=二维费用背包]
+for(int i = 1; i <= n; i++) 
+	for(int j = v; j >= a[i]; j--)
+		for(int k = m; k >= b[i]; k--)
+			f[j][k] = max(f[j][k], f[j - a[i]][k - b[i]] + c[i]);
+\end{lstlisting}
+
+
+\subsubsection{有依赖的背包}
+\begin{lstlisting}[caption=有依赖的背包]
+void dfs(int u) {
+	for(int i = h[u]; ~i ; i = ne[i]) {
+		int son = e[i];
+		dfs(son);
+		for(int j = m - v[u]; j >= 0 ;j--)
+			for(int k = 0; k <= j; k++)
+				f[u][j] = max(f[u][j], f[u][j - k] + f[son][k]);
+	}
+    
+	for(int i = m; i >= v[u] ;i--)
+		f[u][i] = f[u][i - v[u]] + w[u];
+	for(int i = 0; i < v[u] ;i++)
+		f[u][i] = 0;
+    
+	return ;
+}
+\end{lstlisting}
+
+
+\subsubsection{背包问题求方案数}
+$\mathrm{g}$ 数组记录达到容量 $\mathrm{i}$ 对应的最大价值的方案数， $\mathrm{f}$ 数组维护达到容量 $\mathrm{i}$ （注意，这里与之前不同，应该是刚好达到）对应的最大价值，$\mathrm{f}$ 数组初始化为 $\mathrm{-\infty}$。时间复杂度 $\mathrm{O(logV)}$。
+\begin{lstlisting}[caption=背包问题求方案数]
+g[0] = 1;
+for(int i = 1; i <= m; i++)
+	f[i] = -INF;
+
+for(int i = 1; i <= n; i++)
+	for(int j = m; j >= v[i]; j--) {
+		int t = max(f[j], f[j - v[i]] + w[i]);
+		int s = 0;
+		// 不选第 i 个物品可以满足
+		if(t == f[j])	s += g[j];
+		// 选第 i 个物品可以满足
+		if(t == f[j - v[i]] + w[i])	s += g[j - v];
+		if(s >= mod)	s -= mod;
+		f[j] = t;
+		g[j] = s;
+	}
+\end{lstlisting}
+
+
+\subsubsection{背包问题求具体方案}
+\begin{lstlisting}[caption=背包问题求具体方案]
+for(int i = n; i >= 1 ;i--)
+	for(int j = 0; j <= m ;j++) {
+		f[i][j] = f[i + 1][j];
+		if(j >= v[i])
+			f[i][j] = max(f[i][j], f[i + 1][j - v[i]] + w[i]);
+	}
+
+int vol = m;
+// 这样就保证了字典序最小
+for(int i = 1; i <= n ;i++) 
+	if(f[i][vol] == f[i + 1][vol - v[i]] + w[i]) {
+		cout << i << " ";
+		vol -= v[i];
+	}
+\end{lstlisting}
+
+
+\subsection{树形 dp}
+使用二次扫描与换根法，在一类树上问题中，需要我们以每个节点为根统计一些信息。如果我们暴力枚举每个点为根，假设统计复杂度是 $\mathrm{O(P)}$ 的，那么总时间复杂度会达到 $\mathrm{O(NP)}$ 的级别。这种问题我们一般通过两次扫描、换根的方式来优化复杂度：
+
+\begin{itemize}
+	\item 第一次扫描，任选一个结点为根进行树形 DP，此时我们回溯时自底向上统计信息到根。
+	\item 第二次扫描，从刚才选择的根出发，进行一次 DFS。这时需要推算出把根从当前结点换到儿子结点造成的影响，也就是转移方法。在进行递归前按照方程自顶向下把状态转移到儿子结点。
+\end{itemize}
+
+
+\subsection{环形结构上的 dp}
+一般的思路是\textbf{先思考链式问题}，再看如何从环式问题转换为链式问题。
+
+\begin{itemize}
+	\item 可以枚举分开的位置，选择一个位置把环断开，将环转化为链。一般需要执行两次 DP，第一次在任意位置把环断开成链，按照线性问题求解；第二次通过适当的条件和赋值，保证计算出的状态等价于把断开的位置强制相连。
+	\item 可以将链延长两倍，最后取 $\mathrm{dp[1,n], dp[2 ,n + 1], \cdots, dp[n - 1, 2n - 2]}$ 中的最优解（如果与头尾相关的话再加上 $\mathrm{dp[n, 2n - 1]}$）。
+\end{itemize}
+
+
+\subsection{单调队列优化 dp}
+本质就是借助单调性，即时排除不可能的决策。具有以下形式状态转移方程的 dp 通常可以利用单调队列进行优化：
+
+$$
+F[i] = \min\limits_{L(i) \le j \le R(i)} \{F[j] + val(i, j)\}
+$$
+
+其中 $L(i)$ 和 $R(i)$ 是关于变量 $i$ 的一次函数，限制了决策 $j$ 的取值范围。通常将 $val(i, j)$ 拆成两部分，一部分仅与 $i$ 有关，另一部分仅与 $j$ 有关。一般分为以下几步：
+
+\begin{itemize}
+	\item 加入所需元素：向单调队列重复加入元素直到当前元素达到所求区间的右边界，这样就能保证所需元素都在单调队列中。在加入的过程中别忘了维护单调性（即加入新元素时，可以让队尾出队）。
+	\item 弹出越界元素：我们弹出在左边界外的元素，以保证单调队列中的元素都在所求区间中。
+	\item 获取最值：直接取队首作为答案即可。
+\end{itemize}
+
+在上面的模型中，$val(i, j)$ 的每一项仅与 $i$ 和 $j$ 的其中一个有关，是使用单调队列进行优化的基本条件。
+
+
+\subsection{斜率优化 dp}
+\textbf{简单来说，就是利用单调队列维护下凸壳}。具有以下形式状态转移方程的 dp 通常可以利用斜率优化，其中 $\mathrm{val(i, j)}$ 中可能含有 $\mathrm{i}$ 和 $\mathrm{j}$ 的乘积项：
+
+$$
+F[i] = \min\limits_{L(i) \le j \le R(i)} \{F[j] + val(i, j)\}
+$$
+
+我们以一道例题为例介绍斜率优化 dp，假设状态转移方程是：
+
+$$
+f_i = min(f_j + (s_i - s_j)^2 +m)
+$$
+
+其中 $\mathrm{s_i}$ 单调递增。先把 min 去掉，把状态转移方程变为
+
+$$
+f_i = f_j + s_i^2 + s_j^2 - 2s_is_j + m
+$$
+
+由于每次进行转移时，一个 $\mathrm{i}$ 对应多个 $\mathrm{j}$，所以相当于含 $\mathrm{i}$ 的项都是一个常量，含 $\mathrm{j}$ 的项都是一个变量，按照 $\mathrm{y = kx + b}$ 的形式分解原式，得到：
+
+$$
+f_j + s_j^2 = 2s_is_j + f_i - s_i^2 - m
+$$
+
+显然对于一个确定的 $\mathrm{i}$，斜率 $\mathrm{2s_i}$ 是确定的，同时还知道经过点 $\mathrm{(s_j, f_j + s_j ^ 2)}$（由于 $\mathrm{j}$ 的值可以变化，所以这是一组点，也就对应了一组斜率相同的直线），于是通过让截距最小，就能让 $\mathrm{f_i}$ 最小。也就是让斜率为 $\mathrm{2s_i}$ 的直线从下往上扫描，碰到第一个集合中的点时获得最小的截距。
+
+当 $\mathrm{i}$ 的值增加时，斜率也增加，那这条直线先碰到的点也一定是下凸壳上的点，所以我们利用单调队列维护决策点（$\mathrm{(s_j, f_j + s_j ^ 2)}$）的下凸壳即可：
+
+\begin{itemize}
+	\item 若新点 $\mathrm{i - 1}$ 与队尾点的斜率 $\le$ 队尾临点直线的斜率，则队尾出队，删除无用点，维护决策点的下凸壳。
+	\item 新点 $\mathrm{i - 1}$ 入队。
+	\item 若队头临点直线的斜率 $\le k_i$，则队头出队，删除过时点（\textbf{这一步是基于随着 $\mathrm{i}$ 的增加，斜率一定增加才有的}）。
+	\item 此时队头就是最优决策点，做状态转移。 
+\end{itemize}
+
+\begin{lstlisting}[caption=斜率优化 dp]
+// 斜率优化：时间复杂度 O(n)
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int maxn = 1e5 + 5;
+
+int n, m, q[maxn];
+ll s[maxn], f[maxn];
+
+ll delta_y(int i, int j) {
+    ll y_i = f[i] + s[i] * s[i], y_j = f[j] + s[j] * s[j];
+    return y_i - y_j;
+}
+
+ll delta_x(int i, int j) {
+    ll x_i = s[i], x_j = s[j];
+    return x_i - x_j;
+}
+
+ll cmp_slope(int i, int j, int k) {
+    return delta_y(i, j) * delta_x(j, k) - delta_y(j, k) * delta_x(i, j);
+}
+
+int main() {
+    scanf("%d%d", &n, &m);
+    for(int i = 1; i <= n; i++)
+        scanf("%d", &s[i]), s[i] += s[i - 1];
+    int h = 1, t = 0;
+
+    for(int i = 1; i <= n; i++) {
+        while(h < t && cmp_slope(i - 1, q[t], q[t - 1]) <= 0)
+            t--;
+        q[++t] = i - 1;
+        while(h < t && delta_y(q[h + 1], q[h]) <= delta_x(q[h + 1], q[h]) * 2 * s[i])
+            h++;
+        int j = q[h];
+        f[i] = f[j] + (s[i] - s[j]) * (s[i] - s[j]) + m;
+    }
+    printf("%lld\n", f[n]);
+    return 0;
+}
+\end{lstlisting}
+
+如果 $\mathrm{s_i}$ 不具有单调性的话，此时就必须保留整个凸壳，也就是每次不需要把队头与斜率进行比较。同时，队头此时不一定是最优决策了，这样一来就必须在单调队列中二分查找，找到一个位置 $\mathrm{p}$，使得左侧线段斜率都比目标值小，右侧线段斜率都比目标值大，时间复杂度 $\mathrm{O(nlogn)}$。
+
+\begin{lstlisting}[caption=斜率优化 dp + 二分法]
+// 斜率优化 + 二分法：时间复杂度 O(nlogn)
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int maxn = 3e5 + 5;
+
+int n, m, q[maxn];
+ll s[maxn], f[maxn];
+
+ll delta_y(int i, int j) {
+    ll y_i = f[i] + s[i] * s[i], y_j = f[j] + s[j] * s[j];
+    return y_i - y_j;
+}
+
+ll delta_x(int i, int j) {
+    ll x_i = s[i], x_j = s[j];
+    return x_i - x_j;
+}
+
+ll cmp_slope(int i, int j, int k) {
+    return delta_y(i, j) * delta_x(j, k) - delta_y(j, k) * delta_x(i, j);
+}
+
+int find(int l, int r, int i) {
+    // 目标斜率 k
+    // 寻找第一个 >= 斜率的线段，它的左端点即为所求
+    int k_i = 2 * s[i];
+    int ret = r;
+    while(l <= r) {
+        int mid = l + r >> 1;
+        if(k_i * delta_x(q[mid + 1], q[mid]) <= delta_y(q[mid + 1], q[mid]))
+            ret = mid, r = mid - 1;
+        else
+            l = mid + 1;
+    }
+    return ret;
+}
+
+int main() {
+    scanf("%d%d", &n, &m);
+    for(int i = 1; i <= n; i++)
+        scanf("%d", &s[i]), s[i] += s[i - 1];
+    int h = 1, t = 0;
+
+    for(int i = 1; i <= n; i++) {
+        while(h < t && cmp_slope(i - 1, q[t], q[t - 1]) <= 0)
+            t--;
+        q[++t] = i - 1;
+        int j = q[find(h, t, i)];
+        f[i] = f[j] + (s[i] - s[j]) * (s[i] - s[j]) + m;
+    }
+    printf("%lld\n", f[n]);
+    return 0;
+}
+\end{lstlisting}
+
+
+
+\subsection{四边形不等式优化 dp}
+设 $\mathrm{w(x, y)}$ 是定义在整数集合上的二元函数，若对于定义域上的任意整数 $\mathrm{a, b, c, d}$，其中 $a \le b \le c \le d$，都有 $w(a, d) + w(b, c) \ge w(a, c) + w(b, d)$ 成立，则称函数 $\mathrm{w}$ 满足四边形不等式。
+
+\subsubsection{一维线性 dp 的四边形不等式优化}
+对于形如 $F[i] = \min_{0 \le j < i} \{ F[j] + val(j, i) \}$ 的状态转移方程，记 $\mathrm{p[i]}$ 为令 $\mathrm{F[i]}$ 取到最小值的 $\mathrm{j}$ 的值，即 $\mathrm{p[i]}$ 是 $\mathrm{F[i]}$ 的最优决策。若 $p$ 在 $[1, N]$ 上单调不减，则称 $F$ 具有决策单调性。
+
+在状态转移方程 $F[i] = \min_{0 \le j < i} {F[j] + val(j, i)}$ 中，若 $val$ 满足四边形不等式，则 $F$ 具有决策单调性。
+
+当 $F$ 具有决策单调性时，可以用类似于单调队列的结构，将时间复杂度降到 $O(nlogn)$。我们执行以下操作：
+
+\begin{enumerate}
+	\item 开始时，我们将 [0, 1, n] 插入到队中，分别表示决策和左右边界。
+	\item 检查队头：设队头为 $(j_0, l_0, r_0)$，若 $r_0 = i - 1$，删除队头。否则令 $l_0 = i$。
+	\item 取队头保存的 $j$ 为最优决策，执行状态转移，计算出 $F[i]$。
+	\item 尝试插入新决策 $i$（即根据决策单调性，从某一个位置开始，将该位置直到最后的决策都改为 $i$），步骤如下：		
+	\begin{enumerate}
+		\item 取出队尾，记为 $(j_t, l_t, r_t)$。
+		\item 若对于 $F[l_t]$ 来说，$i$ 是比 $j_t$ 更优的决策，即 $F[i] + val(i, l_t) \le F[j_t] + val(j_t, l_t)$，记 $pos = l_t$，删除队尾，回到步骤 (a)
+		\item 若对于 $F[r_t]$ 来说，$j_t$ 是比 $i$ 更优的决策，即 $F[j_t] + val(j_t, r_t) \le F[i] + val(i, r_t)$，去往步骤 (e)
+		\item 否则，在 $[l_t, r_t]$ 上二分查找，求出位置 $pos$，在此之前决策 $j_t$ 更优，在此之后决策 $i$ 更优，去往步骤 (e)
+		\item 把三元组 $(i, pos, n)$ 插入队尾
+	\end{enumerate}
+\end{enumerate}
+
+\begin{lstlisting}[caption=四边形不等式优化一维 dp]
+// 四边形不等式 + 二分队列：时间复杂度 O(nlogn)
+// 下面的 val(j, i) 实际上表示我们上面说的 F[j] + val(j, i)
+void quad_dp() {
+	h = 0, t = -1;
+	q[++t] = 0;
+	lt[0] = 1, rt[0] = n;
+	for (int j = 1; j <= n; ++j) {
+		// 1. 检查队头
+		if (h <= t && rt[q[h]] < j)
+			h++;
+		if (h <= t)
+			lt[q[h]] = j;
+		
+		// 2. 取队头的 p 作为 i 的最优决策，进行状态转移
+		f[j] = val(q[h], j);
+		pre[j] = q[h];
+
+		// 3. 尝试插入新决策
+		while (h <= t && val(j, lt[q[t]]) < val(q[t], lt[q[t]]))
+			t--;
+
+		if (h > t) {
+			lt[j] = j;
+			rt[j] = n;
+			q[++t] = j;
+		}
+		else if (val(j, rt[q[t]]) >= val(q[t], rt[q[t]])) {
+			if (rt[q[t]] < n) {
+				lt[j] = rt[q[t]] + 1;
+				rt[j] = n;
+				q[++t] = j;
+			}
+		}
+		else {
+			int ll = lt[q[t]], rr = rt[q[t]], i = rr;
+			// 二分
+			while (ll <= rr) {
+				int mm = (ll + rr) / 2;
+				if (val(j, mm) < val(q[t], mm))
+					i = mm, rr = mm - 1;
+				else
+					ll = mm + 1;
+			}
+			rt[q[t]] = i - 1;
+			lt[j] = i;
+			rt[j] = n;
+			q[++t] = j;
+		}
+	}
+}
+\end{lstlisting}
+
+注意，为了保持决策单调性，一些题目的要求中有类似于如果最后结果大于 100，输出 no solution，这个时候我们不能在转移过程中直接取 min(101, ...)，而是算出最后结果后，将 n 个 f 都转移之后再跟 100 比较（不然的话，由于取了 min，决策单调性可能不再成立，就不能再用上面那样二分队列的做法了）。
+
+\subsubsection{二维区间 dp 的四边形不等式优化}
+在区间 dp 问题中，我们经常遇到下面这样的状态转移方程：
+$$
+F[i, j] = \min_{i \le k < j} \{F[i, k] + F[k + 1, j] + w(i, j) \}
+$$
+
+利用四边形不等式，也能对其进行优化。
+
+\noindent \textbf{定理 1} 在状态转移方程 $F[i, j] = \min_{i \le k < j} \{F[i, k] + F[k + 1, j] + w(i, j) \}$ 中（特别地，$F[i, i] = w[i, i] = 0$），如果下面两个条件成立：
+
+\begin{enumerate}
+	\item $w$ 满足四边形不等式
+	\item 对于任意的 $a \le b \le c \le d$，有 $w(a, d) \ge w(b, c)$ 		
+\end{enumerate}
+
+那么 $F$ 也满足四边形不等式。
+
+\noindent \textbf{定理 2} 在状态转移方程 $F[i, j] = \min_{i \le k < j} \{F[i, k] + F[k + 1, j] + w(i, j) \}$ 中（特别地，$F[i, i] = w[i, i] = 0$），记 $P[i, j]$ 为令 $F[i, j]$ 取到最优值的 $k$。如果 $F$ 满足四边形不等式，那么对于任意 $i < j$，有 $P[i, j - 1] \le P[i, j] \le P[i + 1, j]$。
+
+
+\subsection{数位 dp}
+
+\noindent \textbf{带前置 0 的写法}
+\begin{lstlisting}[caption=数位 dp，允许有前置 0]
+// 求 [0, n] 中满足条件的数的个数
+// high 表示这一位前面是不是都是卡着上限填的
+// 当前置 0 不影响答案时可以使用
+// 使用前，一定要补前置 0 让所有数位数相同
+int dfs(int u, int high) {
+    if (u == s.size()) return 1;
+    if (!high && f[u] != -1) return f[u];
+    int l = 0, r = high ? s[u] - '0' : 9;
+    int ret = 0;
+	for (int i = l; i <= r; i++) 
+		ret += dfs(u + 1, high && i == r);
+    if (!high) f[u] = ret;
+    return ret;
+}
+\end{lstlisting}
+
+
+\noindent \textbf{不带前置 0 的写法}
+\begin{lstlisting}[caption=数位 dp，不允许有前置 0]
+// 求 [1, n] 中满足条件的数的个数
+// lead 表示前面是否出现过前置 0 以外的其它数字
+// 当前置 0 影响答案时可以使用
+// 使用前，一定要补前置 0 让所有数位数相同
+int dfs(int u, bool high, bool lead) {
+    if (u == s.size()) return !lead;
+    if (!high && !lead && f[u] != -1) return f[u];
+    int l = 0, r = high ? s[u] - '0' : 9;
+    int ret = 0;
+    if(lead)
+        ret = dfs(u + 1, high && s[u] == '0', true);
+
+    for (int i = max(l, (int)lead); i <= r; i++) 
+        ret += dfs(u + 1, high && i == r, false);
+    if (!high && !lead) f[u] = ret;
+    return ret;
+}
+\end{lstlisting}
+
 
 
 

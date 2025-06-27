@@ -1,45 +1,83 @@
-\contentsline {section}{\numberline {1}基础算法}{2}{section.1}%
-\contentsline {subsection}{\numberline {1.1}高精度}{2}{subsection.1.1}%
-\contentsline {subsubsection}{\numberline {1.1.1}高精度加法}{2}{subsubsection.1.1.1}%
-\contentsline {subsubsection}{\numberline {1.1.2}高精度减法}{2}{subsubsection.1.1.2}%
-\contentsline {subsubsection}{\numberline {1.1.3}高精度乘低精度}{3}{subsubsection.1.1.3}%
-\contentsline {subsubsection}{\numberline {1.1.4}高精度乘高精度}{3}{subsubsection.1.1.4}%
-\contentsline {subsubsection}{\numberline {1.1.5}高精度除低精度}{4}{subsubsection.1.1.5}%
-\contentsline {subsubsection}{\numberline {1.1.6}封装为类 + 压位高精度}{4}{subsubsection.1.1.6}%
-\contentsline {section}{\numberline {2}搜索}{10}{section.2}%
-\contentsline {section}{\numberline {3}数学}{11}{section.3}%
-\contentsline {subsection}{\numberline {3.1}数论}{11}{subsection.3.1}%
-\contentsline {subsubsection}{\numberline {3.1.1}判定质数}{11}{subsubsection.3.1.1}%
-\contentsline {subsubsection}{\numberline {3.1.2}埃氏筛}{11}{subsubsection.3.1.2}%
-\contentsline {subsubsection}{\numberline {3.1.3}线性筛}{11}{subsubsection.3.1.3}%
-\contentsline {subsubsection}{\numberline {3.1.4}分解质因数}{12}{subsubsection.3.1.4}%
-\contentsline {subsubsection}{\numberline {3.1.5}求 n 的正约数集合}{12}{subsubsection.3.1.5}%
-\contentsline {subsubsection}{\numberline {3.1.6}求 1 $\sim $ n 的正约数集合}{13}{subsubsection.3.1.6}%
-\contentsline {subsubsection}{\numberline {3.1.7}欧几里得算法求 gcd}{13}{subsubsection.3.1.7}%
-\contentsline {subsubsection}{\numberline {3.1.8}Stein 算法求大整数 gcd}{13}{subsubsection.3.1.8}%
-\contentsline {subsubsection}{\numberline {3.1.9}裴蜀定理}{14}{subsubsection.3.1.9}%
-\contentsline {subsubsection}{\numberline {3.1.10}扩展欧几里得算法}{14}{subsubsection.3.1.10}%
-\contentsline {subsubsection}{\numberline {3.1.11}线性同余方程}{14}{subsubsection.3.1.11}%
-\contentsline {subsubsection}{\numberline {3.1.12}乘法逆元}{15}{subsubsection.3.1.12}%
-\contentsline {subsubsection}{\numberline {3.1.13}线性求 1 $\sim $ N 的逆元}{15}{subsubsection.3.1.13}%
-\contentsline {subsubsection}{\numberline {3.1.14}欧拉函数}{16}{subsubsection.3.1.14}%
-\contentsline {subsubsection}{\numberline {3.1.15}求 $2 \sim N$ 中每个数的欧拉函数}{16}{subsubsection.3.1.15}%
-\contentsline {subsubsection}{\numberline {3.1.16}欧拉定理}{17}{subsubsection.3.1.16}%
-\contentsline {subsubsection}{\numberline {3.1.17}扩展欧拉定理}{17}{subsubsection.3.1.17}%
-\contentsline {subsubsection}{\numberline {3.1.18}中国剩余定理求解线性同余方程组}{17}{subsubsection.3.1.18}%
-\contentsline {subsubsection}{\numberline {3.1.19}扩展中国剩余定理}{18}{subsubsection.3.1.19}%
-\contentsline {subsubsection}{\numberline {3.1.20}高次同余方程}{19}{subsubsection.3.1.20}%
-\contentsline {subsubsection}{\numberline {3.1.21}阶乘取模问题}{19}{subsubsection.3.1.21}%
-\contentsline {subsection}{\numberline {3.2}线性代数}{20}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}矩阵乘法}{20}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}高斯消元法求解线性方程组}{21}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}高斯消元法求解异或方程组}{22}{subsubsection.3.2.3}%
-\contentsline {subsubsection}{\numberline {3.2.4}线性基}{23}{subsubsection.3.2.4}%
-\contentsline {subsection}{\numberline {3.3}组合数学}{25}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}组合数}{25}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}二项式定理}{26}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}多重集的排列数与组合数}{26}{subsubsection.3.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.4}Lucas 定理}{26}{subsubsection.3.3.4}%
-\contentsline {subsubsection}{\numberline {3.3.5}扩展 Lucas 定理}{27}{subsubsection.3.3.5}%
-\contentsline {subsubsection}{\numberline {3.3.6}容斥原理}{30}{subsubsection.3.3.6}%
-\contentsline {subsubsection}{\numberline {3.3.7}Catalan 数}{30}{subsubsection.3.3.7}%
+\contentsline {section}{\numberline {1}基础算法}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}高精度}{3}{subsection.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.1}高精度加法}{3}{subsubsection.1.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.2}高精度减法}{3}{subsubsection.1.1.2}%
+\contentsline {subsubsection}{\numberline {1.1.3}高精度乘低精度}{4}{subsubsection.1.1.3}%
+\contentsline {subsubsection}{\numberline {1.1.4}高精度乘高精度}{4}{subsubsection.1.1.4}%
+\contentsline {subsubsection}{\numberline {1.1.5}高精度除低精度}{5}{subsubsection.1.1.5}%
+\contentsline {subsubsection}{\numberline {1.1.6}封装为类 + 压位高精度}{5}{subsubsection.1.1.6}%
+\contentsline {section}{\numberline {2}搜索}{11}{section.2}%
+\contentsline {section}{\numberline {3}数学}{12}{section.3}%
+\contentsline {subsection}{\numberline {3.1}数论}{12}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}判定质数}{12}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}埃氏筛}{12}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}线性筛}{12}{subsubsection.3.1.3}%
+\contentsline {subsubsection}{\numberline {3.1.4}分解质因数}{13}{subsubsection.3.1.4}%
+\contentsline {subsubsection}{\numberline {3.1.5}求 n 的正约数集合}{13}{subsubsection.3.1.5}%
+\contentsline {subsubsection}{\numberline {3.1.6}求 1 $\sim $ n 的正约数集合}{14}{subsubsection.3.1.6}%
+\contentsline {subsubsection}{\numberline {3.1.7}整除分块}{14}{subsubsection.3.1.7}%
+\contentsline {subsubsection}{\numberline {3.1.8}欧几里得算法求 gcd}{15}{subsubsection.3.1.8}%
+\contentsline {subsubsection}{\numberline {3.1.9}Stein 算法求大整数 gcd}{15}{subsubsection.3.1.9}%
+\contentsline {subsubsection}{\numberline {3.1.10}裴蜀定理}{16}{subsubsection.3.1.10}%
+\contentsline {subsubsection}{\numberline {3.1.11}扩展欧几里得算法}{16}{subsubsection.3.1.11}%
+\contentsline {subsubsection}{\numberline {3.1.12}线性同余方程}{16}{subsubsection.3.1.12}%
+\contentsline {subsubsection}{\numberline {3.1.13}乘法逆元}{16}{subsubsection.3.1.13}%
+\contentsline {subsubsection}{\numberline {3.1.14}线性求 1 $\sim $ N 的逆元}{17}{subsubsection.3.1.14}%
+\contentsline {subsubsection}{\numberline {3.1.15}欧拉函数}{17}{subsubsection.3.1.15}%
+\contentsline {subsubsection}{\numberline {3.1.16}求 $2 \sim N$ 中每个数的欧拉函数}{18}{subsubsection.3.1.16}%
+\contentsline {subsubsection}{\numberline {3.1.17}欧拉定理}{19}{subsubsection.3.1.17}%
+\contentsline {subsubsection}{\numberline {3.1.18}扩展欧拉定理}{19}{subsubsection.3.1.18}%
+\contentsline {subsubsection}{\numberline {3.1.19}中国剩余定理求解线性同余方程组}{19}{subsubsection.3.1.19}%
+\contentsline {subsubsection}{\numberline {3.1.20}扩展中国剩余定理}{20}{subsubsection.3.1.20}%
+\contentsline {subsubsection}{\numberline {3.1.21}高次同余方程}{20}{subsubsection.3.1.21}%
+\contentsline {subsubsection}{\numberline {3.1.22}阶乘取模问题}{21}{subsubsection.3.1.22}%
+\contentsline {subsection}{\numberline {3.2}线性代数}{22}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}矩阵乘法}{22}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}高斯消元法求解线性方程组}{23}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}高斯消元法求解异或方程组}{24}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}线性基}{25}{subsubsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.3}组合数学}{27}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}组合数}{27}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}二项式定理}{28}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}多重集的排列数与组合数}{28}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Lucas 定理}{28}{subsubsection.3.3.4}%
+\contentsline {subsubsection}{\numberline {3.3.5}扩展 Lucas 定理}{29}{subsubsection.3.3.5}%
+\contentsline {subsubsection}{\numberline {3.3.6}容斥原理}{32}{subsubsection.3.3.6}%
+\contentsline {subsubsection}{\numberline {3.3.7}Mobius 函数}{34}{subsubsection.3.3.7}%
+\contentsline {subsubsection}{\numberline {3.3.8}Catalan 数}{34}{subsubsection.3.3.8}%
+\contentsline {subsection}{\numberline {3.4}博弈论}{36}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Nim 游戏}{36}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}公平组合游戏 ICG}{36}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}有向图游戏}{36}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.4}SG 函数}{36}{subsubsection.3.4.4}%
+\contentsline {subsubsection}{\numberline {3.4.5}有向图游戏的和}{36}{subsubsection.3.4.5}%
+\contentsline {subsubsection}{\numberline {3.4.6}操作出某个状态取胜的博弈游戏}{36}{subsubsection.3.4.6}%
+\contentsline {section}{\numberline {4}字符串}{37}{section.4}%
+\contentsline {subsection}{\numberline {4.1}KMP}{37}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Power Strings 问题}{37}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}非严格 Power Strings}{38}{subsubsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.2}字符串哈希}{38}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Trie}{39}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}最大异或对问题}{39}{subsubsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.4}AC 自动机}{39}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}AC 自动机的拓扑排序优化}{41}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}最短母串问题}{43}{subsubsection.4.4.2}%
+\contentsline {section}{\numberline {5}动态规划}{46}{section.5}%
+\contentsline {subsection}{\numberline {5.1}背包}{46}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}0-1 背包}{46}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}完全背包}{46}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}多重背包}{46}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.4}混合背包}{47}{subsubsection.5.1.4}%
+\contentsline {subsubsection}{\numberline {5.1.5}分组背包}{48}{subsubsection.5.1.5}%
+\contentsline {subsubsection}{\numberline {5.1.6}二维费用背包}{48}{subsubsection.5.1.6}%
+\contentsline {subsubsection}{\numberline {5.1.7}有依赖的背包}{48}{subsubsection.5.1.7}%
+\contentsline {subsubsection}{\numberline {5.1.8}背包问题求方案数}{48}{subsubsection.5.1.8}%
+\contentsline {subsubsection}{\numberline {5.1.9}背包问题求具体方案}{49}{subsubsection.5.1.9}%
+\contentsline {subsection}{\numberline {5.2}树形 dp}{49}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}环形结构上的 dp}{49}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}单调队列优化 dp}{50}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}斜率优化 dp}{50}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}四边形不等式优化 dp}{53}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}一维线性 dp 的四边形不等式优化}{53}{subsubsection.5.6.1}%
+\contentsline {subsubsection}{\numberline {5.6.2}二维区间 dp 的四边形不等式优化}{55}{subsubsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.7}数位 dp}{55}{subsection.5.7}%
