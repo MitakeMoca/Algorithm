@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.5.26)  26 JUN 2025 17:16
+This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.5.26)  2 JUL 2025 21:56
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -776,22 +776,29 @@ n/10.53937 值，|  对 于 字 符 串 $[] \OT1/cmr/m/n/10.53937 = [][][][] [] 
 Sun(0)/m/n/10.53937 从 位 置 $[]$ 开 始 的 长 度 为 $[]$ 的 子 串 $[]$
  []
 
-[38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49] [50] [51] [52]
-[53] [54] [55] [56] (algorithm.aux)
+[38] [39] [40] [41] [42] [43] [44] [45] [46]
+
+LaTeX Warning: Command \' invalid in math mode on input line 2124.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 2124.
+
+Missing character: There is no ́ in font cmmi10!
+[47] [48] [49] [50] [51] [52] [53] [54] [55] [56] [57] [58] (algorithm.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2022/08/05>
  ***********
 Package rerunfilecheck Info: File `algorithm.out' has not changed.
-(rerunfilecheck)             Checksum: F2872B73FB200EEAC2AE87BE447FA1F6;9768.
+(rerunfilecheck)             Checksum: 8765823BCE44205AAFC03BE0239E8F44;10221.
  ) 
 Here is how much of TeX's memory you used:
- 18199 strings out of 409617
- 374070 string characters out of 5781118
- 2211191 words of memory out of 5000000
- 40050 multiletter control sequences out of 15000+600000
+ 18205 strings out of 409617
+ 374131 string characters out of 5781118
+ 2199191 words of memory out of 5000000
+ 40056 multiletter control sequences out of 15000+600000
  568042 words of font info for 110 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 93i,13n,97p,423b,1819s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 93i,13n,97p,423b,1818s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on algorithm.pdf (56 pages).
+Output written on algorithm.pdf (58 pages).

@@ -1622,7 +1622,7 @@ $$
 // KMP（双指针）
 
 // nxt 数组，以及字符串都从 1 开始
-// 求 next 数组
+// 求 next 数组，是对模式串求的
 void pre() {
 	nxt[1] = 0;
 	int j = 0;
@@ -1655,10 +1655,31 @@ void kmp() {
 
 如果 $\mathrm{n \bmod (n - next[n]) = 0}$  ，那么答案就是 $\mathrm{n / (n - next[n])}$，否则答案就是 1。
 
-\subsubsection{非严格 Power Strings}
+\subsubsection{非严格 Power Strings（最短循环节问题）}
 比如 abcabcab 的最小循环串是 abc，长度为 $\mathrm{3}$
 
 最小循环串长度：$\mathrm{n-next[n]}$
+
+\subsubsection{最长循环节问题}
+之前的 Power Strings 问题，求的都是最短循环节，一些问题要求解最长循环节。
+
+根据上面 Power Strings 问题的推导不难发现，任意循环节的长度相当于字符串长度 - 某公共真前后缀长度。显然字符串长度是不能改变的，在上面的问题里我们每次用最长公共真前后缀长度，得到了最短循环节长度。现在我们如果想求最长循环节长度，就要用最短公共真前后缀。那么，我们同样需要改变 $\mathrm{nxt}$ 数组的意义，让它从最长公共真前后缀长度变为\textbf{当前临时的最短公共真前后缀长度}，进行一个记忆化。
+
+\begin{lstlisting}[caption=最长循环节问题]
+// S 是主串，P 是模式串
+void kmp() {
+	for(int i = 1; i <= n; i++) {
+		int j = i;
+		// 通过如此迭代 nxt 数组，能够得到所有的真公共前后缀长度
+		while(nxt[j])
+			j = nxt[j];
+		// 被处理过的 nxt[i] 表示最短公共真前后缀长度
+		if(nxt[i])
+			nxt[i] = j;
+		// i - j 即为位置 i 对应的最长循环节
+	}
+}
+\end{lstlisting}
 
 
 
@@ -2030,6 +2051,143 @@ int main() {
     return 0;
 }
 \end{lstlisting}
+
+
+\subsubsection{AC 自动机上 dp 问题}
+在解决这类问题时，一般的思路就是状态有两个维度，分别表示当前的步数（主串的长度）和当前的顶点。价值通过回跳边传递（即标记下传，比如每遇到一个模式串就加一分，或者问有多少个方案能够包含至少一个模式串之类的最优化 dp 与计数 dp 问题）；状态通过树边和转移边进行转移，因为每次部署 + 1（向下再走一层，再往下扩展一个字符），所以可以用 bfs 来实现转移。
+
+在进行最优化 dp 时，别忘了对初始状态进行合理的赋值。
+
+标记下传时，可以利用 build 过程中 dfs 的性质，上层的标记肯定已经处理好了，在建立回跳边的时候从上往下传递一步。
+
+
+\subsection{最小表示法}
+给定一个字符串 $\mathrm{S[1 \sim n]}$，可以不断地把最后一个字符放到开头，最终将得到 $\mathrm{n}$ 个字符串，其中字典序最小的一个称为  $\mathrm{S}$ 的最小表示。
+
+\begin{enumerate}
+	\item 可先将 $\mathrm{S}$ 复制一份在它的结尾，得到的字符串为 $\mathrm{SS}$，有 $\mathrm{B[i] = SS[i \sim i + n - 1]}$。		
+	\item 在比较 $\mathrm{B[i]}$ 与 $\mathrm{B[j]}$ 的过程中，如果在 $\mathrm{i+k}$ 与 $\mathrm{j+k}$ 处发现不相等，假设 $\mathrm{SS[i+k] > SS[j+k]}$，那么显然 $\mathrm{B[i]}$ 不是 $\mathrm{S}$ 的最小表示；此外还可以知道 $\mathrm{B[i+1], B[i+2] \cdots B[i + k]}$ 也不是 $\mathrm{S}$ 的最小表示。
+	\item 同理，如果 $\mathrm{SS[i+k] < SS[j + k]}$，那么 $\mathrm{B[j], B[j + 1] \cdots B[j+k]}$ 都不是 $\mathrm{S}$ 的最小表示。
+\end{enumerate}
+
+\begin{lstlisting}[caption=最小表示法]
+// 字符串从 1 开始
+int n = strlen(s + 1);
+for(int i = 1; i <= n; i++)
+	s[n + i] = s[i];
+int i = 1, j = 2, k;
+while(i <= n && j <= n) {
+	for(k = 0; k < n && s[i + k] == s[j + k]; k++);
+	if(k == n)
+		break;
+	if(s[i + k] > s[j + k]) {
+		i = i + k + 1;
+		if(i == j) i++;
+	} else {
+		j = j + k + 1;
+		if(i == j) j++;
+	}
+}
+int ans = min(i, j);
+\end{lstlisting}
+
+\subsection{扩展 KMP}
+对一个长度为 $\mathrm{n}$ 的字符串 $\mathrm{S}$，用 $\mathrm{z[i]}$ 表示 $\mathrm{S}$ 与其后缀 $\mathrm{S[i, n]}$ 的最长公共前缀（LCP）的长度。暴力计算时间复杂度 $\mathrm{O(n^2)}$。
+
+对于 $\mathrm{i}$，我们称区间 $\mathrm{[i, i + z[i] - 1]}$ 是 $\mathrm{i}$ 的匹配段，叫做 z-box。算法过程中我们维护右端点最靠右的 z-box，记作 $\mathrm{[l, r]}$。那么 $\mathrm{S[l, r]}$ 是 $\mathrm{S}$ 前缀，在计算 $\mathrm{z[i]}$ 时要保证 $\mathrm{l \le i}$。利用盒子，借助之前的状态来加速计算新的状态，即由 $\mathrm{z[1], \cdots, z[i - 1]}$ 快速计算 $\mathrm{z[i]}$。
+
+\noindent \textbf{算法流程}
+
+计算完前 $\mathrm{i - 1}$ 个 $\mathrm{z}$ 函数，维护盒子 $\mathrm{[l, r]}$，则 $\mathrm{s[l, r] = s[1, r - l + 1]}$
+
+\begin{enumerate}
+	\item 如果 $\mathrm{i \le r}$（在盒内），则有 $s[i, r] = s[i - l + 1, r - l + 1]$		
+	\begin{enumerate}
+		\item 若 $\mathrm{z[i - l + 1] < r - i + 1}$，则 $\mathrm{z[i] = z[i - l +1]}$
+		\item 若 $\mathrm{z[i - l + 1] \ge r - i + 1}$，则令 $\mathrm{z[i] = r - i + 1}$，从 $\mathrm{r + 1}$ 往后暴力枚举
+	\end{enumerate}
+	\item 如果 $\mathrm{i > r}$（在盒外），则从 $\mathrm{i}$ 开始暴力枚举
+	\item 求出 $\mathrm{z[i]}$ 后，如果 $\mathrm{i + z[i] - 1 > r}$，则更新盒子 $\mathrm{l = i, r = i + z[i] - 1}$
+\end{enumerate}
+
+\begin{lstlisting}[caption=扩展 KMP]
+// 字符串从 1 开始
+void get_z(char *s, int n) {
+	z[1] = n;
+	for(int i = 2, l, r = 0; i <= n; i++) {
+		if(i <= r)
+			z[i] = min(z[i - l + 1], r - i + 1);
+		while(s[1 + z[i]] == s[i + z[i]])
+			z[i]++;
+		if(i + z[i] - 1 > r)
+			l = i, r = i + z[i] - 1;
+	}
+}
+\end{lstlisting}
+
+还有对于求两个不同字符串使用的扩展 KMP：
+\begin{lstlisting}[caption=扩展 KMP]
+// 求 S 与 T 的每一个后缀 LCP 的长度数组 p（对于 T 而言）
+void get_p(char *s, int n, char *t, int m) {
+	for(int i = 1, l, r = 0; i <= m; i++) {
+		if(i <= r)
+			p[i] = min(z[i - l + 1], r - i + 1);
+		while(1 + p[i] <= n && i + p[i] <= m && s[1 + p[i]] == t[i + p[i]])
+			p[i]++;
+		if(i + p[i] - 1 > r)
+			l = i, r = i + p[i] - 1;
+	}
+}
+\end{lstlisting}
+
+
+\subsection{Manacher}
+可以在 $\mathrm{O(n)}$ 的时间求出一个字符串中的\textbf{最长回文串}。思路与扩展 KMP 类似。
+
+首先需要改造字符串，在字符之间和串两端插入 \#，改造后，原来的回文串都变成奇回文串，方便统一处理。同时设置 $\mathrm{s[0] = \$}$ 作为哨兵结点。
+
+\textbf{回文半径}：以 $\mathrm{i}$ 为中心的最长回文串的长度的一半（上取整），叫回文半径。
+
+\textbf{加速盒子}：算法过程中我们维护\textbf{右端点最靠右的最长回文串}，利用这个盒子，借助之前的状态来加速计算新的状态。盒内 $\mathrm{d[i]}$ 可以利用对称点的 $\mathrm{d}$ 值转移，盒外利用暴力求解。
+
+\noindent \textbf{算法流程}
+
+计算完前 $\mathrm{i - 1}$ 个 $\mathrm{d}$ 函数，维护盒子 $\mathrm{[l, r]}$，有 $\mathrm{s[l ~ r]}$ 是回文串。
+
+\begin{enumerate}
+	\item 如果 $\mathrm{i \le r}$（在盒内），$\mathrm{i}$ 的对称点为 $\mathrm{r - i + l}$。		
+	\begin{enumerate}
+		\item 若 $\mathrm{d[r - i + l] < r - i + 1}$，则 $\mathrm{d[i] = d[r - i +l]}$
+		\item 若 $\mathrm{d[r - i + l] \ge r - i + 1}$，则令 $\mathrm{d[i] = r - i + 1}$，从 $\mathrm{r + 1}$ 往后暴力枚举
+	\end{enumerate}
+	\item 如果 $\mathrm{i > r}$（在盒外），则从 $\mathrm{i}$ 开始暴力枚举
+	\item 求出 $\mathrm{d[i]}$ 后，如果 $\mathrm{i + d[i] - 1 > r}$，则更新盒子 $\mathrm{l = i - d[i] + 1, r = i + d[i] - 1}$
+\end{enumerate}
+
+\begin{lstlisting}[caption=扩展 KMP]
+// 原字符串下标从 1 开始
+void pre(char *a, char *s) {
+	int n = strlen(a + 1), k = 0;
+	s[0] = '$', s[++k] = '#';
+	for(int i = 1; i <= n; i++)
+		s[++k] = a[i], s[++k] = '#';
+	n = k;
+}
+
+// 最长回文串长度就是 max(d[i]) - 1
+void get_d(char *s, int n) {
+	d[1] = 1;
+	for(int i = 2, l, r = 1; i <= n; i++) {
+		if(i <= r)
+			d[i] = min(d[r - i + l], r - i + 1);
+		while(s[i - d[i]] == s[i + d[i]])
+			d[i]++;
+		if(i + d[i] - 1 > r)
+			l = i - d[i] + 1, r = i + d[i] - 1;
+	}
+}
+\end{lstlisting}
+
 
 
 
