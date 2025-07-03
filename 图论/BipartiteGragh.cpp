@@ -4,7 +4,18 @@ using namespace std;
 vector<int> p[100005];
 int C[100005] = {0};
 
-bool judge(int t, int c);
+bool judge(int t, int c)
+{
+	C[t] = c;
+
+	for(auto i: p[t]) {
+		if(C[i] == 0) {
+			if(judge(i, 3 - c)) return true;
+		}
+		else if(C[i] == c) return true;
+	}
+	return false;
+}
 
 int main()
 {
@@ -28,17 +39,4 @@ int main()
 	}
 	puts("YES");
 	return 0;
-}
-
-bool judge(int t, int c)
-{
-	C[t] = c;
-
-	for(auto i: p[t]) {
-		if(C[i] == 0) {
-			if(judge(i, 3 - c)) return true;
-		}
-		else if(C[i] == c) return true;
-	}
-	return false;
 }
