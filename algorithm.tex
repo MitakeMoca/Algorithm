@@ -1653,7 +1653,9 @@ void kmp() {
 \subsubsection{Power Strings 问题}
 求一个字符串由多少个重复的子串连接而成。
 
-如果 $\mathrm{n \bmod (n - next[n]) = 0}$  ，那么答案就是 $\mathrm{n / (n - next[n])}$，否则答案就是 1。
+\textbf{对于长度为 $\mathrm{n}$ 的字符串，若有长度为 $\mathrm{m}$ 的循环节，充要条件是有长度为 $\mathrm{n - m}$ 的公共前后缀}。
+
+如果 $\mathrm{n \bmod (n - next[n]) = 0}$  ，那么答案就是 $\mathrm{n / (n - next[n])}$，否则答案就是 1（要注意，即使是整除的情况下，nxt 的值可能为 0，导致求出来的循环次数也是 1）。
 
 \subsubsection{非严格 Power Strings（最短循环节问题）}
 比如 abcabcab 的最小循环串是 abc，长度为 $\mathrm{3}$
@@ -1678,6 +1680,90 @@ void kmp() {
 			nxt[i] = j;
 		// i - j 即为位置 i 对应的最长循环节
 	}
+}
+\end{lstlisting}
+
+
+\subsubsection{指定次数的循环节问题}
+比如我们希望找到形如 ${SSSS \cdots ST}$，其中循环节 $\mathrm{S}$ 出现 $\mathrm{k}$ 次，$\mathrm{T}$ 是循环节 $\mathrm{S}$ 的前缀（可以等于循环节）。
+
+首先先求出最小循环节的长度（n - nxt[n]），再求出循环节出现的最多次数 d = $\frac{n}{n - nxt[n]}$。把这 $\mathrm{d}$ 次出现分成 $\mathrm{k + 1}$ 组，前 $\mathrm{k}$ 组每个大循环节包含 $\frac{d}{k}$ 个小循环节，最后一组包含 $\mathrm{d \% k}$ 个小循环节。如果 $\mathrm{T \neq S}$，合法的方案就是让最后一组的小循环节数小于前面组里的小循环节数。如果 $\mathrm{T = S}$，合法的方案就是让最后一组的小循环节数小于等于前面组里的小循环节数。
+
+
+\subsubsection{nxt 值的估计}
+如果某位置 $\mathrm{i}$ 的最长公共前后缀是 $\mathrm{nxt[i]}$，那么 $\mathrm{i + 1}$ 的最长公共前后缀不超过 $\mathrm{nxt[i] + 1}$，$\mathrm{i - 1}$ 的最长公共前后缀长度不小于 $\mathrm{nxt[i] - 1}$。
+
+
+\subsubsection{失配树}
+在循环节问题中，我们看到了如何找到 $\mathrm{S[1 ~ i]}$ 的所有公共前后缀，就是不断地取 $\mathrm{nxt}$。我们可以对所有 $\mathrm{i}$，都将 $\mathrm{i}$ 向 $\mathrm{nxt[i]}$ 连接一条边，这样就能形成一棵树，称为失配树。对于每个节点，从它到根路径上的每一个结点都表示了一个它的公共前后缀（又叫 border）。
+
+\begin{lstlisting}[caption=失配树]
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int maxn = 1e6 + 5;
+
+int read() {
+	int tem;
+	scanf("%d",&tem);
+	return tem;
+}
+
+char s[maxn];
+int nxt[maxn], dep[maxn], f[maxn][21];
+
+void pre(char P[], int m) {
+	nxt[1] = 0;
+	int j = 0;
+	for(int i = 1; i < m; i++) {
+		while(j > 0 && P[j + 1] != P[i + 1])
+			j = nxt[j];
+		if(P[j + 1] == P[i + 1])
+			j++;
+		nxt[i + 1] = j;
+	}
+}
+
+vector<int> vc[maxn];
+void dfs(int u, int fa) {
+	dep[u] = dep[fa] + 1;
+	for(int i = 0; i <= 19; i++)
+		f[u][i + 1] = f[f[u][i]][i];
+	for(auto it : vc[u]) 
+		if(it != fa) {
+			f[it][0] = u;
+			dfs(it, u);
+		}
+}
+
+int lca(int x, int y) {
+	if(dep[x] < dep[y])
+		swap(x, y);
+	for(int i = 20; i >= 0; i--) {
+		if(dep[f[x][i]] >= dep[y])
+			x = f[x][i];
+		// 注意，下面这部分处理与正常 LCA 不同，两个串本身不能充当公共祖先
+		if(x == y)
+			return f[x][0];
+	}
+	for(int i = 20; i >= 0; i--) {
+		if(f[x][i] != f[y][i])
+			x = f[x][i], y = f[y][i];
+	}
+	return f[x][0];
+}
+
+int main() {
+	scanf("%s", s + 1);
+	int m = strlen(s + 1);
+	pre(s, m);
+	for(int i = 1; i <= m; i++)
+		vc[nxt[i]].push_back(i);
+	dfs(0, 0);
+	m = read();
+	for(int i = 1; i <= m; i++)
+		printf("%d\n", lca(read(), read()));
+	return 0;
 }
 \end{lstlisting}
 
@@ -2060,6 +2146,11 @@ int main() {
 
 标记下传时，可以利用 build 过程中 dfs 的性质，上层的标记肯定已经处理好了，在建立回跳边的时候从上往下传递一步。
 
+\subsubsection{求以某位置开头的模式串个数}
+通过记录主串中每个位置对应的结点，最后统计这个结点对应了多少模式串的结尾，可以求出有多少以某位置结尾的模式串。
+
+把主串和所有模式串倒过来就可以用类似的方法求有多少以某位置开头的模式串了。
+
 
 \subsection{最小表示法}
 给定一个字符串 $\mathrm{S[1 \sim n]}$，可以不断地把最后一个字符放到开头，最终将得到 $\mathrm{n}$ 个字符串，其中字典序最小的一个称为  $\mathrm{S}$ 的最小表示。
@@ -2115,6 +2206,8 @@ int ans = min(i, j);
 void get_z(char *s, int n) {
 	z[1] = n;
 	for(int i = 2, l, r = 0; i <= n; i++) {
+		// 千万要注意：在多组数据时，z 不一定会被赋予初始值
+		// 猜猜我为什么加了这么一句话
 		if(i <= r)
 			z[i] = min(z[i - l + 1], r - i + 1);
 		while(s[1 + z[i]] == s[i + z[i]])
@@ -2141,10 +2234,14 @@ void get_p(char *s, int n, char *t, int m) {
 \end{lstlisting}
 
 
+\subsubsection{求某个前缀可作为哪些前缀的真循环节}
+无非就是求所有的合法循环次数 $\mathrm{k}$，对于 $\mathrm{k}$ 有长度为 $\mathrm{ik}$ 的字符串循环节是 $\mathrm{i}$。故有一段从 $\mathrm{i + 1}$ 开始的长度为 $\mathrm{ik - i}$ 的后缀（即从 $\mathrm{i +1}$ 位置开始的公共前缀）和字符串前缀相等，即满足 $\mathrm{ik - i \le z_{i + 1}}$，即满足 $\mathrm{k \le \frac{z_{i+1}}{i} + 1}$ 的 $\mathrm{k}$ 都可以。
+
+
 \subsection{Manacher}
 可以在 $\mathrm{O(n)}$ 的时间求出一个字符串中的\textbf{最长回文串}。思路与扩展 KMP 类似。
 
-首先需要改造字符串，在字符之间和串两端插入 \#，改造后，原来的回文串都变成奇回文串，方便统一处理。同时设置 $\mathrm{s[0] = \$}$ 作为哨兵结点。
+首先需要改造字符串，在字符之间和串两端插入 \#，改造后，原来的回文串都变成奇回文串，方便统一处理（如果本身你就要找所有长度为奇数的回文串，那么就不用处理）。同时设置 $\mathrm{s[0] = \$}$ 作为哨兵结点。
 
 \textbf{回文半径}：以 $\mathrm{i}$ 为中心的最长回文串的长度的一半（上取整），叫回文半径。
 
@@ -2164,7 +2261,7 @@ void get_p(char *s, int n, char *t, int m) {
 	\item 求出 $\mathrm{d[i]}$ 后，如果 $\mathrm{i + d[i] - 1 > r}$，则更新盒子 $\mathrm{l = i - d[i] + 1, r = i + d[i] - 1}$
 \end{enumerate}
 
-\begin{lstlisting}[caption=扩展 KMP]
+\begin{lstlisting}[caption=Manacher]
 // 原字符串下标从 1 开始
 void pre(char *a, char *s) {
 	int n = strlen(a + 1), k = 0;
@@ -2178,6 +2275,8 @@ void pre(char *a, char *s) {
 void get_d(char *s, int n) {
 	d[1] = 1;
 	for(int i = 2, l, r = 1; i <= n; i++) {
+		// 千万要注意：在多组数据时，d 不一定会被赋予初始值
+		// 猜猜我为什么加了这么一句话
 		if(i <= r)
 			d[i] = min(d[r - i + l], r - i + 1);
 		while(s[i - d[i]] == s[i + d[i]])
@@ -2188,6 +2287,209 @@ void get_d(char *s, int n) {
 }
 \end{lstlisting}
 
+\subsubsection{寻找以某位置开头 / 结尾的最长回文串}
+在 Manacher 的算法流程中，我们找到了以某位置为中心的最长串。显然在点 $\mathrm{i}$ 为中心的回文串区间 $\mathrm{[l, r]}$ 中，$\mathrm{[k. 2i - k]}$ 是一个回文串。不难发现所有点对应的回文串的右端点都能通过这样的对称方法找到：
+
+\begin{lstlisting}[caption=寻找以某位置开头的最长回文串]
+// 在区间左端点打标记
+for(int i = 1; i <= n; i++)
+	en[i - d[i] + 1] = i;
+for(int i = 1; i <= n; i++)
+	en[i] = max(en[i], en[i - 1]);
+for(int i = 1; i <= n; i++)
+	en[i] = 2 * en[i] - i;
+\end{lstlisting}
+
+
+\subsection{后缀自动机}
+后缀自动机上有\textbf{转移边}和\textbf{链接边}两种边。从根节点沿转移边所走的路径对应一个子串，根节点表示空串，其它节点表示同类子串的集合（同类子串是指结束位置相同的子串）。
+
+应用一个后缀自动机需要两步：
+
+\begin{enumerate}
+	\item 第一步是动态构建后缀自动机（所有链接边组成一个有向无环图），在这个过程中要维护三个数组：
+		\begin{itemize}
+			\item ch[x][c]：存结点 x 的转移边的终点
+			\item fa[x]：存结点 x 的链接边的终点
+			\item len[x]：存结点 x 的最长串的长度
+		\end{itemize}
+		在维护链接边的过程中，要保证\textbf{合法性}：即\textbf{子节点的最短串的最长真后缀 = 父节点的最长串}。
+	\item 抽离图中的链接边，构建后缀链接树，利用后缀链接树来解决问题。树上结点表示同类子串及其结束位置的集合（同类指的是结束位置相同的子串）。在这个过程中可以维护节点的子串长度，节点表示的子串数量和子串的出现次数。
+\end{enumerate}
+
+构建后缀自动机的过程分为如下几步：
+\begin{enumerate}
+	\item 扩展一个新字符 c，创建对应的新节点，并利用最后一个在自动机中的结点 p 为其初始化长度
+	\item p 沿链接边回跳，直到找到一个有向 c 转移的结点；在此过程中对于没有向 c 转移的节点，从节点向新点建立转移边
+	\item 对于最后找到的 p，有以下几个分支操作：
+		\begin{enumerate}
+			\item 若 p 为 0，证明 c 是一个新字符，直接从新点向根节点 1 建立链接边
+			\item 否则，找到 ch[p][c]，记为 q。如果 q 中最长串的长度 = p 中最长串的长度 + 1，则从新点向 q 建立链接边
+			\item 否则，如果 q 中最长串的长度 $\mathrm{\neq}$ p 中最长串的长度 + 1，说明这个链接边不合法（不满足新节点的最长串的最长真后缀长度 = q 中最长串长度，也就是说你最长串的最长真后缀仅仅是我这个结点能代表的字符串里中间的一个），则裂开 q，从 np 向 nq 建链接边。
+		\end{enumerate}
+\end{enumerate}
+
+\begin{lstlisting}[caption=后缀自动机]
+// 长度为 n 的字符串，最多会建 2n - 1 个点和 3n - 4 条边
+// 所以建链接树时，点和边要开 2n 的空间
+// 时间复杂度 O(n)
+// cnt 表示每个节点代表的字符串数目
+ll cnt[N];
+// 1 代表根，空字符串
+int tot = 1, np = 1;
+// fa 存链接边、ch 存转移边，len 存最长长度
+int fa[N], ch[N][26], len[N];
+vector<int> e[N];
+
+void extend(int c) {
+	int p = np;
+	np = ++tot;
+	len[np] = len[p] + 1, cnt[np] = 1;
+
+	// p 沿链接边回跳，同时从旧点向新点建转移边
+	for(; p && !ch[p][c]; p = fa[p])
+		ch[p][c] = np;
+	
+	if(p == 0)
+		fa[np] = 1;
+	else {
+		int q = ch[p][c];
+		// q 是合法的链接点
+		if(len[q] == len[p] + 1)
+			fa[np] = q;
+		else {
+			// 将 q 分裂出去 nq，接管 q 的大部分职责
+			int nq = ++tot;
+			len[nq] = len[p] + 1;
+
+			// 重建 nq、q 和 np 的链接边
+			fa[nq] = fa[q];
+			fa[q] = nq;
+			fa[np] = nq;
+
+			// 将所有指向 q 的转移边改为指向 nq
+			// 从今往后我就是你
+			for(; p && ch[p][c] == q; p = fa[p])
+				ch[p][c] = nq;
+			
+			// 从 q 出发的转移边复制给 nq
+			// 就算我们分家了，该走动的亲戚还是要走动
+			memcpy(ch[nq], ch[q], sizeof(ch[q]));
+		}
+	}
+}
+
+void dfs(int u) {
+	for(auto v : e[u]) {
+		dfs(v);
+		cnt[u] += cnt[v];
+	}
+}
+
+void build(char *s) {
+	for(int i = 0; s[i]; i++)
+		extend(s[i] - 'a');
+	for(int i = 2; i <= tot; i++)
+		e[fa[i]].push_back(i);
+	dfs(1);
+}
+\end{lstlisting}
+
+
+\subsection{后缀数组}
+主要维护三个数组和两个函数：
+\begin{itemize}
+	\item 后缀数组 sa[i]：表示排序为 i 的后缀编号
+	\item 名次数组 rk[i]：表示后缀 i 的排名，有 rk[sa[i]] = sa[rk[i]] = i
+	\item 高度数组 height[i] = lcp(sa[i], sa[i - 1])：表示第 i 名后缀和第 i - 1 名后缀的最长公共前缀的长度。排序相邻的两个后缀相似度最高。
+	\item get\_sa()：利用倍增法和桶排序，计算 sa 数组
+	\item get\_height()：利用 sa 和 rk，计算 height 数组
+\end{itemize}
+
+排序过程利用了倍增和桶排序的思想。桶排序体现在双关键字排序，比如我们想对 Excel 表格进行双关关键字排序，那么首先要排第二关键字，然后再排第一关键字。这样从最后的结果看才是先基于第一关键字排序，再基于第二关键字排序。再通过正序累加，逆序拿取的方式，保证了排名的正确性。倍增体现在一开始利用每个后缀的第一个字符排序；第一轮循环利用 [1, 2] 排序；第二轮循环利用 [1, 4] 排序，以此类推。每轮都把上次得到的两个区间拼在一起，作为两个新的关键字。
+
+求得 height 数组时利用了后缀数组维护的信息。后缀 $\mathrm{i}$ 的前临后缀一定是 $\mathrm{sa[rk[i] - 1]}$。同时利用了如下定理，增加了循环枚举的起始值（利用了字典序相邻后缀的相似度）：
+
+$$
+\mathrm{height[rk[i]] \ge height[rk[i - 1]] - 1}
+$$
+
+\begin{lstlisting}[caption=后缀数组]
+// 因为倍增时可能访问越界数组，所以要开 2 倍大小
+// n 为后缀个位，m 为桶的个数
+int n, m;
+// x 是桶数组，记录每个元素属于哪个桶；y 是辅助数组；c 是计数数组，记录每个桶中元素个数
+int x[maxn], y[maxn], c[maxn];
+int sa[maxn], rk[maxn], height[maxn];
+char s[maxn];
+
+// 时间复杂度 O(nlogn)
+void get_sa() {
+    n = strlen(s + 1);
+	// 先按照第一个字母进行桶排序
+	for(int i = 1; i <= n; i++)
+		x[i] = s[i], c[x[i]]++, m = max(m, x[i]);
+	for(int i = 1; i <= m; i++)
+		c[i] += c[i - 1];
+	for(int i = n; i; i--)
+		sa[c[x[i]]--] = i;
+	
+	// 利用倍增法加速优化
+	for(int k = 1; k <= n; k <<= 1) {
+		memset(c, 0, sizeof(c));
+		for(int i = 1; i <= n; i++)
+			y[i] = sa[i];
+
+		// 按照第二关键字进行排序
+		for(int i = 1; i <= n; i++)
+			c[x[y[i] + k]]++;
+		for(int i = 1; i <= m; i++)
+			c[i] += c[i - 1];
+		for(int i = n; i; i--)
+			sa[c[x[y[i] + k]]--] = y[i];
+		
+		// 重新按照第一关键字排序
+		memset(c, 0, sizeof(c));
+		for(int i = 1; i <= n; i++)
+			y[i] = sa[i];
+		for(int i = 1; i <= n; i++)
+			c[x[y[i]]]++;
+		for(int i = 1; i <= m; i++)
+			c[i] += c[i - 1];
+		for(int i = n; i; i--)
+			sa[c[x[y[i]]]--] = y[i];
+		
+		// 将后缀放入桶数组中，即重新维护利用当前看到的关键字推断出的桶
+		for(int i = 1; i <= n; i++)
+			y[i] = x[i];
+        m = 0;
+		for(int i = 1; i <= n; i++)
+			if(y[sa[i]] == y[sa[i - 1]] && y[sa[i] + k] == y[sa[i - 1] + k])
+				x[sa[i]] = m;
+			else
+				x[sa[i]] = ++m;
+		
+		if(m == n)
+			break;
+	}
+}
+
+// 时间复杂度 O(n)
+void get_height() {
+	for(int i = 1; i <= n; i++)
+		rk[sa[i]] = i;
+	for(int i = 1, k = 0; i <= n; i++) {
+		if(rk[i] == 1)
+			continue;
+		if(k)
+			k--;
+		int j = sa[rk[i] - 1];
+		while(i + k <= n && j + k <= n && s[i + k] == s[j + k])
+			k++;
+		height[rk[i]] = k;
+	}
+}
+\end{lstlisting}
 
 
 

@@ -1,11 +1,11 @@
 \contentsline {section}{\numberline {1}基础算法}{3}{section.1}%
 \contentsline {subsection}{\numberline {1.1}高精度}{3}{subsection.1.1}%
 \contentsline {subsubsection}{\numberline {1.1.1}高精度加法}{3}{subsubsection.1.1.1}%
-\contentsline {subsubsection}{\numberline {1.1.2}高精度减法}{3}{subsubsection.1.1.2}%
+\contentsline {subsubsection}{\numberline {1.1.2}高精度减法}{4}{subsubsection.1.1.2}%
 \contentsline {subsubsection}{\numberline {1.1.3}高精度乘低精度}{4}{subsubsection.1.1.3}%
 \contentsline {subsubsection}{\numberline {1.1.4}高精度乘高精度}{4}{subsubsection.1.1.4}%
 \contentsline {subsubsection}{\numberline {1.1.5}高精度除低精度}{5}{subsubsection.1.1.5}%
-\contentsline {subsubsection}{\numberline {1.1.6}封装为类 + 压位高精度}{5}{subsubsection.1.1.6}%
+\contentsline {subsubsection}{\numberline {1.1.6}封装为类 + 压位高精度}{6}{subsubsection.1.1.6}%
 \contentsline {section}{\numberline {2}搜索}{11}{section.2}%
 \contentsline {section}{\numberline {3}数学}{12}{section.3}%
 \contentsline {subsection}{\numberline {3.1}数论}{12}{subsection.3.1}%
@@ -55,33 +55,42 @@
 \contentsline {section}{\numberline {4}字符串}{37}{section.4}%
 \contentsline {subsection}{\numberline {4.1}KMP}{37}{subsection.4.1}%
 \contentsline {subsubsection}{\numberline {4.1.1}Power Strings 问题}{37}{subsubsection.4.1.1}%
-\contentsline {subsubsection}{\numberline {4.1.2}非严格 Power Strings}{38}{subsubsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.2}字符串哈希}{38}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Trie}{39}{subsection.4.3}%
-\contentsline {subsubsection}{\numberline {4.3.1}最大异或对问题}{39}{subsubsection.4.3.1}%
-\contentsline {subsection}{\numberline {4.4}AC 自动机}{39}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}AC 自动机的拓扑排序优化}{41}{subsubsection.4.4.1}%
-\contentsline {subsubsection}{\numberline {4.4.2}最短母串问题}{43}{subsubsection.4.4.2}%
-\contentsline {subsubsection}{\numberline {4.4.3}AC 自动机上 dp 问题}{45}{subsubsection.4.4.3}%
-\contentsline {subsection}{\numberline {4.5}最小表示法}{45}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}扩展 KMP}{46}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Manacher}{47}{subsection.4.7}%
-\contentsline {section}{\numberline {5}动态规划}{48}{section.5}%
-\contentsline {subsection}{\numberline {5.1}背包}{48}{subsection.5.1}%
-\contentsline {subsubsection}{\numberline {5.1.1}0-1 背包}{48}{subsubsection.5.1.1}%
-\contentsline {subsubsection}{\numberline {5.1.2}完全背包}{48}{subsubsection.5.1.2}%
-\contentsline {subsubsection}{\numberline {5.1.3}多重背包}{48}{subsubsection.5.1.3}%
-\contentsline {subsubsection}{\numberline {5.1.4}混合背包}{49}{subsubsection.5.1.4}%
-\contentsline {subsubsection}{\numberline {5.1.5}分组背包}{50}{subsubsection.5.1.5}%
-\contentsline {subsubsection}{\numberline {5.1.6}二维费用背包}{50}{subsubsection.5.1.6}%
-\contentsline {subsubsection}{\numberline {5.1.7}有依赖的背包}{50}{subsubsection.5.1.7}%
-\contentsline {subsubsection}{\numberline {5.1.8}背包问题求方案数}{50}{subsubsection.5.1.8}%
-\contentsline {subsubsection}{\numberline {5.1.9}背包问题求具体方案}{51}{subsubsection.5.1.9}%
-\contentsline {subsection}{\numberline {5.2}树形 dp}{51}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}环形结构上的 dp}{51}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}单调队列优化 dp}{52}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}斜率优化 dp}{52}{subsection.5.5}%
-\contentsline {subsection}{\numberline {5.6}四边形不等式优化 dp}{55}{subsection.5.6}%
-\contentsline {subsubsection}{\numberline {5.6.1}一维线性 dp 的四边形不等式优化}{55}{subsubsection.5.6.1}%
-\contentsline {subsubsection}{\numberline {5.6.2}二维区间 dp 的四边形不等式优化}{57}{subsubsection.5.6.2}%
-\contentsline {subsection}{\numberline {5.7}数位 dp}{57}{subsection.5.7}%
+\contentsline {subsubsection}{\numberline {4.1.2}非严格 Power Strings（最短循环节问题）}{38}{subsubsection.4.1.2}%
+\contentsline {subsubsection}{\numberline {4.1.3}最长循环节问题}{38}{subsubsection.4.1.3}%
+\contentsline {subsubsection}{\numberline {4.1.4}指定次数的循环节问题}{38}{subsubsection.4.1.4}%
+\contentsline {subsubsection}{\numberline {4.1.5}nxt 值的估计}{38}{subsubsection.4.1.5}%
+\contentsline {subsubsection}{\numberline {4.1.6}失配树}{39}{subsubsection.4.1.6}%
+\contentsline {subsection}{\numberline {4.2}字符串哈希}{40}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Trie}{41}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}最大异或对问题}{42}{subsubsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.4}AC 自动机}{42}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}AC 自动机的拓扑排序优化}{44}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}最短母串问题}{45}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}AC 自动机上 dp 问题}{48}{subsubsection.4.4.3}%
+\contentsline {subsubsection}{\numberline {4.4.4}求以某位置开头的模式串个数}{48}{subsubsection.4.4.4}%
+\contentsline {subsection}{\numberline {4.5}最小表示法}{48}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}扩展 KMP}{49}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}求某个前缀可作为哪些前缀的真循环节}{50}{subsubsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.7}Manacher}{50}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}寻找以某位置开头 / 结尾的最长回文串}{51}{subsubsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.8}后缀自动机}{51}{subsection.4.8}%
+\contentsline {subsection}{\numberline {4.9}后缀数组}{53}{subsection.4.9}%
+\contentsline {section}{\numberline {5}动态规划}{56}{section.5}%
+\contentsline {subsection}{\numberline {5.1}背包}{56}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}0-1 背包}{56}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}完全背包}{56}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}多重背包}{56}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.4}混合背包}{57}{subsubsection.5.1.4}%
+\contentsline {subsubsection}{\numberline {5.1.5}分组背包}{58}{subsubsection.5.1.5}%
+\contentsline {subsubsection}{\numberline {5.1.6}二维费用背包}{58}{subsubsection.5.1.6}%
+\contentsline {subsubsection}{\numberline {5.1.7}有依赖的背包}{58}{subsubsection.5.1.7}%
+\contentsline {subsubsection}{\numberline {5.1.8}背包问题求方案数}{58}{subsubsection.5.1.8}%
+\contentsline {subsubsection}{\numberline {5.1.9}背包问题求具体方案}{59}{subsubsection.5.1.9}%
+\contentsline {subsection}{\numberline {5.2}树形 dp}{59}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}环形结构上的 dp}{59}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}单调队列优化 dp}{60}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}斜率优化 dp}{60}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}四边形不等式优化 dp}{63}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}一维线性 dp 的四边形不等式优化}{63}{subsubsection.5.6.1}%
+\contentsline {subsubsection}{\numberline {5.6.2}二维区间 dp 的四边形不等式优化}{65}{subsubsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.7}数位 dp}{65}{subsection.5.7}%
